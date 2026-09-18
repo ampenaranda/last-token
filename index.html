@@ -28,7 +28,7 @@
   --gut:clamp(20px,4vw,40px);
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth; scroll-padding-top:74px}
 @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
 html,body{margin:0}
 body{
@@ -67,14 +67,21 @@ body::after{
 .bar nav{margin-left:auto; display:flex; gap:22px; font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase}
 .bar nav a{color:var(--dim); text-decoration:none; transition:color .18s ease}
 .bar nav a:hover{color:var(--cyan)}
-@media (max-width:720px){ .bar nav{display:none} }
-
-/* ---------- hero: title left, scene right, deck under the scene ---------- */
-.herowrap{max-width:1880px; margin:0 auto; padding:0 var(--gut)}
-.hero{
-  display:grid; grid-template-columns:minmax(300px,1fr) minmax(0,2.1fr);
-  gap:clamp(28px,4vw,72px); align-items:center; padding:clamp(36px,5vw,64px) 0 0;
+/* Hiding the nav left a phone with no way to reach any section. Let it scroll
+   instead, and keep the bar's own row from wrapping. */
+@media (max-width:720px){
+  .bar .in{height:50px; gap:12px}
+  .bar nav{
+    gap:16px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+    flex:1 1 auto; justify-content:flex-end; font-size:10.5px; letter-spacing:.08em;
+  }
+  .bar nav::-webkit-scrollbar{display:none}
+  .bar nav a{white-space:nowrap; padding:4px 0}
+  .bar .mark{font-size:18px}
 }
+
+/* ---------- hero type ---------- */
+.herowrap{max-width:1880px; margin:0 auto; padding:0 var(--gut)}
 header{padding:0}
 .kicker{
   font-family:var(--mono); font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
@@ -94,6 +101,32 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
   text-transform:uppercase; color:var(--faint);
 }
 .meta span b{color:var(--dim); font-weight:400}
+
+/* ---------- the scene, fixed behind the whole page ----------
+   One runtime instance for the entire document. It is decorative at this
+   layer: pointer-events are off so it never swallows a wheel gesture or a
+   click meant for the page, and the arrow keys reach it through document
+   anyway. The page renders it only while it can actually be seen. */
+.scenefix{
+  position:fixed; top:0; left:0; z-index:0; overflow:hidden; pointer-events:none; background:#06050a;
+  width:calc(100% / var(--dprcap,1)); height:calc(100% / var(--dprcap,1));
+  transform:scale(var(--dprcap,1)); transform-origin:0 0;
+}
+.scenefix canvas{width:100%; height:100%; display:block; border:0; outline:none}
+
+/* ---------- hero: title over the live scene ---------- */
+.hero{
+  position:relative; z-index:2; min-height:100vh; min-height:100svh;
+  display:grid; align-content:center; padding:clamp(88px,12vh,140px) 0 clamp(64px,10vh,120px);
+}
+.hero .herowrap{width:100%}
+.heroin{max-width:min(46ch,46vw)}
+@media (max-width:1000px){ .heroin{max-width:none} }
+/* a readable pocket behind the title, so text never fights the moving scene */
+.hero::before{
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(100deg, var(--bg) 0, rgba(8,7,12,.95) 34%, rgba(8,7,12,.62) 52%, transparent 76%);
+}
 @media (max-width:1000px){
   /* Stacked, the copy would sit right on top of the robot. Drop the block to
      the foot of the screen and give it its own panel instead of dimming the
@@ -112,35 +145,6 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
   .meta{margin:18px 0 0; gap:6px 16px; font-size:10.5px}
   .cue{margin:20px 0 0}
   .hero::before{background:linear-gradient(to bottom, rgba(8,7,12,.78) 0, rgba(8,7,12,.12) 24%, rgba(8,7,12,.12) 52%, rgba(8,7,12,.7) 100%)}
-}
-
-/* ---------- the scene, fixed behind the whole page ----------
-   One runtime instance for the entire document. It is decorative at this
-   layer: pointer-events are off so it never swallows a wheel gesture or a
-   click meant for the page, and the arrow keys reach it through document
-   anyway. The page renders it only while it can actually be seen. */
-.scenefix{
-  position:fixed; top:0; left:0; z-index:0; overflow:hidden; pointer-events:none; background:#06050a;
-  width:calc(100% / var(--dprcap,1)); height:calc(100% / var(--dprcap,1));
-  transform:scale(var(--dprcap,1)); transform-origin:0 0;
-}
-.scenefix canvas{width:100%; height:100%; display:block; border:0; outline:none}
-
-/* ---------- hero: title over the live scene ---------- */
-.hero{
-  position:relative; z-index:2; min-height:100svh;
-  display:grid; align-content:center; padding:clamp(88px,12vh,140px) 0 clamp(64px,10vh,120px);
-}
-.hero .herowrap{width:100%}
-.heroin{max-width:min(46ch,46vw)}
-@media (max-width:1000px){ .heroin{max-width:none} }
-/* a readable pocket behind the title, so text never fights the moving scene */
-.hero::before{
-  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
-  background:linear-gradient(100deg, var(--bg) 0, rgba(8,7,12,.92) 26%, rgba(8,7,12,.55) 46%, transparent 68%);
-}
-@media (max-width:1000px){
-  
 }
 .cue{
   display:inline-flex; align-items:center; gap:10px; margin:34px 0 0;
@@ -162,7 +166,7 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
 
 /* ---------- the arcade panel: the scene comes back, with the controls ---------- */
 .arcade{
-  position:relative; z-index:2; min-height:100svh;
+  position:relative; z-index:2; min-height:100vh; min-height:100svh;
   display:grid; align-content:end; padding:0 0 clamp(18px,3vh,34px);
 }
 .arcade::before{
@@ -186,7 +190,8 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   opacity:0; transition:opacity .5s ease; pointer-events:none;
 }
-.dpad.on{opacity:1; pointer-events:auto}
+.dpad{visibility:hidden}
+.dpad.on{opacity:1; pointer-events:auto; visibility:visible}
 .dpad.jumppad{left:var(--gut); flex-direction:column; align-items:center; gap:7px}
 .dpad.walkpad{right:var(--gut)}
 .jumppad i{
@@ -214,12 +219,13 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
   background:rgba(8,7,12,.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   opacity:0; transition:opacity .5s ease, border-color .18s ease; pointer-events:none;
 }
-.mute.inscene.on{opacity:1; pointer-events:auto}
+.mute.inscene{visibility:hidden}
+.mute.inscene.on{opacity:1; pointer-events:auto; visibility:visible}
 .mute.inscene i{display:none}
 @media (max-width:620px){
-  .dcross{grid-template-columns:repeat(3,38px); grid-template-rows:repeat(2,38px)}
-  .dk{width:38px; height:38px; font-size:14px}
-  .dk.jump{width:112px; height:38px; font-size:11px}
+  .dcross{grid-template-columns:repeat(3,44px); grid-template-rows:repeat(2,44px); gap:5px}
+  .dk{width:44px; height:44px; font-size:15px}
+  .dk.jump{width:118px; height:44px; font-size:11px}
   .dpad{bottom:calc(100% + 18px); padding:8px}
   /* the deck already carries a sound toggle at this width; two is clutter */
   .mute.inscene{display:none}
@@ -227,11 +233,14 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
 
 /* ---------- control deck ---------- */
 .pad{padding:0}
-.arcade .pad{padding:0}
+.arcade .pad{
+  padding:16px 18px 18px; border-radius:var(--r-lg);
+  background:rgba(8,7,12,.9); border:1px solid var(--line);
+}
 .padtop{display:flex; flex-wrap:wrap; align-items:center; gap:10px 20px; margin:0 0 12px}
 .padhint{
   display:flex; gap:10px; align-items:center; margin:0; flex:1 1 220px;
-  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--dim);
 }
 .padhint .dot{width:5px; height:5px; border-radius:50%; background:var(--cyan); flex:none}
 .legend{display:flex; align-items:center; gap:16px; margin-left:auto}
@@ -272,13 +281,21 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
 .pb:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--pbs)}
 .pb:focus-visible,.dk:focus-visible,.mute:focus-visible,.bar nav a:focus-visible,.credit a:focus-visible{outline:2px solid var(--cyan); outline-offset:3px}
 .skip{position:absolute; left:16px; top:-60px; z-index:60; padding:10px 14px; background:var(--gold); color:#0b0912; font-family:var(--mono); font-size:12px; border-radius:8px; text-decoration:none}
+.sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
 .skip:focus{top:12px}
+.skip2:focus{left:210px}
+#content:focus{outline:none}
 .pb:disabled{opacity:.3; cursor:not-allowed; box-shadow:0 5px 0 var(--pbs)}
 .pb.c{--pbc:#3ef0ff; --pbs:#158fa0}
 .pb.m{--pbc:#ff3fa6; --pbs:#a3205f}
 .pb.g{--pbc:#ffd84a; --pbs:#a3860f}
 .pb.v{--pbc:#9d78ff; --pbs:#553099}
-@media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{font-size:12px; top:4px; right:5px; min-width:22px; padding:2px 5px 1px} .padrow{gap:8px} }
+@media (max-width:620px){
+  /* the badge sat on the label at this size, so the label steps aside */
+  .pb{font-size:15px; letter-spacing:.03em; padding:15px 24px 13px 6px; border-radius:11px; min-height:52px}
+  .pb .k{font-size:12px; top:4px; right:4px; min-width:20px; padding:2px 4px 1px}
+  .padrow{gap:8px}
+}
 .scenefix .placeholder{position:absolute; inset:0; background:#06050a; z-index:4}
 .scenefix .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
 .scenefix .posterUI{
@@ -378,13 +395,13 @@ h2 .accent{color:var(--cyan)}
 .pin img{display:block; width:100%}
 .pin figcaption{
   position:absolute; left:0; right:0; bottom:0; padding:30px 13px 11px;
-  background:linear-gradient(to top, rgba(6,5,10,.95), transparent);
+  background:linear-gradient(to top, rgba(6,5,10,.97) 0, rgba(6,5,10,.9) 55%, rgba(6,5,10,.45) 82%, transparent);
 }
 .pin figcaption b{
   font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.13em;
   text-transform:uppercase; display:block; color:var(--gold); margin-bottom:3px;
 }
-.pin figcaption span{color:var(--dim); font-size:12.5px; line-height:1.5}
+.pin figcaption span{color:#c2bccd; font-size:12.5px; line-height:1.5}
 @media (max-width:620px){ .board{columns:1} }
 @media (max-width:620px){ .meta{gap:6px 18px} }
 
@@ -417,12 +434,18 @@ h2 .accent{color:var(--cyan)}
   border:1px solid var(--line); background:#06050a; aspect-ratio:21/8;
 }
 .horizon canvas{display:block; width:100%; height:100%}
-.horizon .tag{
+/* its own class: .tag is the coin chip, and sharing it leaked width:max-content,
+   an uppercase mono pill and a gold border onto a paragraph. */
+.horizon .hznote{
   position:absolute; left:0; right:0; bottom:0; padding:54px 22px 18px; text-align:center;
-  background:linear-gradient(to top, rgba(6,5,10,.94), transparent);
-  font-size:13px; color:var(--dim); line-height:1.65; margin:0;
+  background:linear-gradient(to top, rgba(6,5,10,.96) 42%, rgba(6,5,10,.8) 72%, transparent);
+  font-family:var(--body); font-size:13px; color:var(--ink); line-height:1.65; margin:0;
 }
-.horizon .tag b{color:var(--ink); font-weight:500}
+.horizon .hznote b{color:var(--gold); font-weight:500}
+@media (max-width:720px){
+  .horizon{aspect-ratio:4/3}
+  .horizon .hznote{position:static; padding:14px 16px 16px; background:#0a0810; font-size:12.5px}
+}
 .horizon .fallback{
   position:absolute; inset:0; display:grid; place-content:center;
   color:var(--faint); font-family:var(--mono); font-size:12px;
@@ -484,7 +507,8 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 </style>
 </head>
 <body>
-<a class="skip" href="#play">Skip to the controls</a>
+<a class="skip" href="#content">Skip to the content</a>
+<a class="skip skip2" href="#play">Skip to the controls</a>
 <div id="prog"></div>
 <div class="scenefix">
   <!-- Live WebGL scene. The published scene URL lives in SCENE_URL at the bottom of this file. -->
@@ -499,9 +523,9 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 </div>
 
 <div class="bgfx" aria-hidden="true">
-  <img class="b1" src="img/ideas/level-ref-01-neon-floor.jpg" alt="" data-depth="0.10">
-  <img class="b2" src="img/ideas/level-ref-04-hud-arcade.jpg" alt="" data-depth="0.18">
-  <img class="b3" src="img/ideas/station-dance-floor.jpg" alt="" data-depth="0.07">
+  <img class="b1" loading="lazy" decoding="async" src="img/ideas/level-ref-01-neon-floor.jpg" alt="" data-depth="0.10">
+  <img class="b2" loading="lazy" decoding="async" src="img/ideas/level-ref-04-hud-arcade.jpg" alt="" data-depth="0.18">
+  <img class="b3" loading="lazy" decoding="async" src="img/ideas/station-dance-floor.jpg" alt="" data-depth="0.07">
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -529,6 +553,7 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
   </div>
 </div>
 
+<main id="content" tabindex="-1">
 <section class="hero">
   <div class="herowrap">
   <header class="heroin">
@@ -607,7 +632,7 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 
   <div class="horizon rv" id="horizon">
     <div class="fallback">This browser could not start WebGL for the horizon panel.</div>
-    <p class="tag">Two kinds of WebGL on one page: the scene above was <b>authored in an editor</b> and driven by events, this horizon is <b>one quad and a fragment shader</b>, roughly forty lines of maths. Same pixels, opposite ends of the craft.</p>
+    <p class="hznote">Two kinds of WebGL on one page: the scene above was <b>authored in an editor</b> and driven by events, this horizon is <b>one quad and a fragment shader</b>, roughly forty lines of maths. Same pixels, opposite ends of the craft.</p>
   </div>
 
   <section id="made">
@@ -684,11 +709,12 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
     </button>
 
     <h2 class="plabel"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>Your turn</h2>
+    <p class="sr">Above these controls a 3D arcade floor is rendering live: a robot stands on a lit octagonal podium, ringed by a checkerboard dance floor, a jukebox, a claw machine, neon palms and a wall of photo-booth prints. The buttons below play an animation on him; the arrow pad walks him around the floor.</p>
     <div class="pad">
       <div class="padtop">
         <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Walk him with the pad or the arrow keys.</p>
         <div class="legend">
-          <button class="mute" id="mute" type="button" aria-pressed="false" title="Turn the sound off">
+          <button class="mute" id="mute" type="button" aria-pressed="false" aria-label="Sound" title="Turn the sound off">
             <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
             <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
             <i>Sound on</i>
@@ -708,6 +734,7 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
     </div>
   </div>
 </section>
+</main>
 
 <script>
 /* ---------------------------------------------------------------
@@ -751,6 +778,8 @@ if (NativeAC) {
 const muteBtns = document.querySelectorAll(".mute");
 function applyMute() {
   muteBtns.forEach((btn) => {
+    /* aria-pressed carries the state; the NAME stays "Sound" so a screen reader
+       announces one control changing rather than two different controls. */
     btn.setAttribute("aria-pressed", muted ? "true" : "false");
     btn.title = muted ? "Turn the sound on" : "Turn the sound off";
     btn.querySelector("i").textContent = muted ? "Sound off" : "Sound on";
@@ -769,6 +798,19 @@ let splineApp = null;
 const padhint = document.getElementById("padhint");
 const canvas = document.getElementById("scene");
 
+/* Under prefers-reduced-motion the scene is parked on a frame. A control press
+   wakes it for as long as the emote runs, then it settles back. */
+let stillTimer = 0;
+function stillScene() {
+  if (splineApp && !splineApp.isStopped) splineApp.stop();
+}
+function wakeScene(ms) {
+  if (!splineApp || !reduceMotion.matches) return;
+  if (splineApp.isStopped) splineApp.play();
+  clearTimeout(stillTimer);
+  stillTimer = setTimeout(stillScene, ms || 6000);
+}
+
 function pressKey(key) {
   const upper = key.toUpperCase();
   const init = {
@@ -785,6 +827,7 @@ function pressKey(key) {
 
 document.querySelectorAll(".pb").forEach((b) => {
   b.addEventListener("click", () => {
+    wakeScene(b.dataset.key === "1" ? 21000 : b.dataset.key === "2" ? 17000 : 9000);
     pressKey(b.dataset.key);
   });
 });
@@ -797,6 +840,7 @@ function arrowInit(key) {
   const num = { ArrowUp: 38, ArrowDown: 40, ArrowLeft: 37, ArrowRight: 39, " ": 32 }[key];
   return { key: key, code: code, keyCode: num, which: num, bubbles: true, cancelable: true };
 }
+const padReleases = [];
 document.querySelectorAll(".dk").forEach((b) => {
   const key = b.dataset.key;
   let down = false;
@@ -804,6 +848,7 @@ document.querySelectorAll(".dk").forEach((b) => {
     if (down) return;
     down = true;
     b.classList.add("held");
+    wakeScene(4000);
     try { b.setPointerCapture(ev.pointerId); } catch (_) {}
     document.dispatchEvent(new KeyboardEvent("keydown", arrowInit(key)));
   };
@@ -818,10 +863,38 @@ document.querySelectorAll(".dk").forEach((b) => {
   b.addEventListener("pointercancel", release);
   b.addEventListener("lostpointercapture", release);
   b.addEventListener("contextmenu", (ev) => ev.preventDefault());
+  /* A pad is a hold, so the keyboard has to be able to hold it too: Enter or
+     Space down starts the walk, and letting go stops it. Without this the pads
+     are the only controls a keyboard cannot work. */
+  b.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    ev.preventDefault();
+    if (!down) { down = true; b.classList.add("held"); wakeScene(4000); document.dispatchEvent(new KeyboardEvent("keydown", arrowInit(key))); }
+  });
+  b.addEventListener("keyup", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    ev.preventDefault();
+    release();
+  });
+  b.addEventListener("blur", release);
+  padReleases.push(release);
 });
-window.addEventListener("blur", () => {
-  document.querySelectorAll(".dk.held").forEach((b) => b.dispatchEvent(new PointerEvent("pointerup")));
+/* A held key must never latch on. Blur covers a desktop tab switch; iOS does
+   not always fire it, so the visibility change is the belt and braces. */
+function releaseAllPads() { padReleases.forEach((r) => r()); }
+addEventListener("blur", releaseAllPads);
+addEventListener("pointerup", releaseAllPads);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    releaseAllPads();
+    if (splineApp && !splineApp.isStopped) { splineApp.stop(); wasPlaying = true; }
+    audioContexts.forEach((ctx) => { if (ctx.state === "running") ctx.suspend().catch(() => {}); });
+  } else {
+    if (wasPlaying && splineApp) { wasPlaying = false; driveScene(); }
+    if (!muted) audioContexts.forEach((ctx) => { if (ctx.state === "suspended") ctx.resume().catch(() => {}); });
+  }
 });
+let wasPlaying = false;
 
 (async function () {
   let url = SCENE_URL;
@@ -847,6 +920,10 @@ window.addEventListener("blur", () => {
     splineApp = app;
     window.lastToken.app = app;
 
+    canvas.addEventListener("webglcontextlost", (ev) => {
+      ev.preventDefault();
+      padhint.innerHTML = '<span class="dot"></span> The 3D context was dropped by the browser. Reload to bring the arcade back.';
+    });
     const ph = document.getElementById("ph");
     if (ph) {
       ph.style.transition = "opacity .6s ease";
@@ -857,6 +934,10 @@ window.addEventListener("blur", () => {
     document.querySelectorAll(".dpad, .mute.inscene").forEach((d) => d.classList.add("on"));
     measureScene();
     driveScene();
+    /* Someone who asked for less motion should not get a full-screen scene
+       animating forever behind the text. Hold the first frame instead; any
+       control they press starts it, and it settles again afterwards. */
+    if (reduceMotion.matches) { stillScene(); }
   } catch (err) {
     console.warn("Last Token: the live scene did not load, keeping the poster.", err);
     padhint.innerHTML =
@@ -929,15 +1010,21 @@ function driveScene() {
   /* Render only while the scene can actually be seen. The reading block covers
      it completely in the middle of the page, and a paused canvas costs nothing:
      play() resumes the clips where they left off rather than restarting them. */
-  const lit = scrollY < heroBottom || scrollY + vh > arcTop;
+  /* A little slack either side so a scroll resting on the boundary cannot
+     stop and start the renderer over and over. */
+  const pad = sceneLit ? 120 : 0;
+  const lit = scrollY < heroBottom + pad || scrollY + vh > arcTop - pad;
   if (lit !== sceneLit) {
     sceneLit = lit;
-    if (lit) { if (splineApp.isStopped) splineApp.play(); }
+    if (lit) { if (splineApp.isStopped && !reduceMotion.matches) splineApp.play(); }
     else if (!splineApp.isStopped) splineApp.stop();
   }
 }
 addEventListener("scroll", driveScene, { passive: true });
-addEventListener("resize", () => { capPixels(); measureScene(); driveScene(); });
+/* camT is the cache that skips redundant writes; the push-back depends on the
+   aspect, so an orientation change has to invalidate it or the new framing
+   never lands. */
+addEventListener("resize", () => { capPixels(); measureScene(); camT = -1; driveScene(); });
 addEventListener("load", () => { measureScene(); driveScene(); });
 
 /* Parallax and card tilt. One scroll handler drives the backdrop's fade-in and
@@ -949,7 +1036,7 @@ addEventListener("load", () => { measureScene(); driveScene(); });
   const hero = document.querySelector(".hero");
   const bg = [...document.querySelectorAll(".bgfx img")];
   const cards = [...document.querySelectorAll("[data-depth]:not(.bgfx img)")];
-  let queued = false;
+  let queued = false, lastBgo = "";
   function frame() {
     queued = false;
     const y = scrollY, vh = innerHeight;
@@ -957,14 +1044,18 @@ addEventListener("load", () => { measureScene(); driveScene(); });
     const panelTop = document.getElementById("play").offsetTop;
     const fadeIn = Math.min(1, Math.max(0, (y - heroEnd + vh * 0.85) / (vh * 0.6)));
     const fadeOut = Math.min(1, Math.max(0, (panelTop - (y + vh)) / (vh * 0.5)));
-    root.style.setProperty("--bgo", (fadeIn * fadeOut).toFixed(3));
-    bg.forEach((el) => { el.style.setProperty("--py", (-y * parseFloat(el.dataset.depth)).toFixed(1) + "px"); });
-    cards.forEach((el) => {
+    const bgo = (fadeIn * fadeOut).toFixed(3);
+    if (bgo !== lastBgo) { lastBgo = bgo; root.style.setProperty("--bgo", bgo); }
+    /* Read every rect first, then write every style. Interleaving them forces
+       the browser to re-layout once per card, on every scroll frame. */
+    const shifts = [];
+    for (const el of cards) {
       const r = el.getBoundingClientRect();
-      if (r.bottom < -200 || r.top > vh + 200) return;
-      const mid = r.top + r.height / 2 - vh / 2;
-      el.style.setProperty("--py", (-mid * parseFloat(el.dataset.depth)).toFixed(1) + "px");
-    });
+      if (r.bottom < -200 || r.top > vh + 200) continue;
+      shifts.push([el, (-(r.top + r.height / 2 - vh / 2) * parseFloat(el.dataset.depth)).toFixed(1)]);
+    }
+    for (const el of bg) el.style.setProperty("--py", (-y * parseFloat(el.dataset.depth)).toFixed(1) + "px");
+    for (const [el, py] of shifts) el.style.setProperty("--py", py + "px");
   }
   addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(frame); } }, { passive: true });
   addEventListener("resize", frame);

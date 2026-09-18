@@ -959,3 +959,52 @@ review pass over the finished file caught what was left.
 
 ![The hero: the robot idling, live, behind the title](img/site-hero-scene.jpg)
 ![The arcade panel after the footer](img/site-panel.jpg)
+
+
+### Day 9, sixth pass: what an adversarial review caught
+
+Four independent reviewers went over the finished file — regressions,
+accessibility, performance, responsive — and every finding was then handed to a
+separate agent whose job was to REFUTE it against the source. 60 claims, 31
+survived, 10 were rejected outright. Two were things I would have shipped:
+
+**A duplicate `.hero` rule.** The restructure moved the scene out of the hero, so
+the hero lost its second grid child — but the old
+`grid-template-columns: minmax(300px,1fr) minmax(0,2.1fr)` stayed behind in an
+earlier block. Above 1000px the copy was being squeezed into a 441px track with a
+926px empty track beside it. It was invisible below 1000px, where a media query
+reset the columns, which is why every phone check passed.
+
+**A class collision.** The horizon caption was written as `<p class="tag">` back
+when `.tag` meant nothing in particular. This pass repurposed `.tag` as the coin
+chip that replaced the chapter numbers — `display:inline-flex`,
+`width:max-content`, uppercase mono, gold pill border. The caption inherited all
+of it and rendered as one 2276px line inside a 927px panel, clipped mid-sentence.
+Renamed to `.hznote`.
+
+**A third ordering bug the review found:** the whole phone hero block sat BEFORE
+the base `.hero` rules in the stylesheet. Equal specificity, so the later rule
+won and the mobile overrides were dead. Moved after.
+
+The rest, fixed in the same pass:
+
+- The walk pads only listened for pointer events, so they were the one control a
+  keyboard could not operate. They now hold on Enter or Space.
+- `prefers-reduced-motion` did not stop the scene — a full-screen animation
+  behind body text, which fails WCAG 2.2.2. It now parks on a frame and wakes
+  only for as long as a control needs it.
+- The parallax handler interleaved layout reads with style writes on every
+  frame. Reads are batched first now.
+- `camT` caches the last camera value to skip redundant writes, but the
+  push-back depends on aspect, so an orientation change never re-applied.
+  Invalidated on resize.
+- Hidden tabs kept a 3D scene and a soundtrack running; a held pad key could
+  latch on when the page went to the background on iOS.
+- No `webglcontextlost` handler, no `main` landmark, a skip link that skipped
+  past all the content, no navigation at all below 720px, 38px touch targets,
+  `100svh` with no `vh` fallback, and eagerly-loaded backdrop images.
+
+**The lesson worth keeping:** every one of these came from edits that were
+individually correct. A find-and-replace does not know what else lives in the
+region it rewrites, and a repurposed class name does not know who else is using
+it. Reviewing the finished artefact — not the diff — is what found them.
