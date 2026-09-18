@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Last Token</title>
+<meta name="author" content="Ana M. Penaranda">
+<meta name="description" content="An isometric 80s arcade diorama running in WebGL. A study in animation, controls and interaction.">
+<meta name="theme-color" content="#08070c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08070c;
+  --ink:#f3effa;
+  --dim:#8d849f;
+  --faint:#5d556e;
+  --cyan:#3ef0ff;
+  --mag:#ff3fa6;
+  --gold:#ffd84a;
+  --line:rgba(243,239,250,.10);
+  --line-soft:rgba(243,239,250,.055);
+  --display:"Bebas Neue",Impact,sans-serif;
+  --body:"Space Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r-sm:4px; --r-md:10px; --r-lg:16px;
+  --gut:clamp(20px,4vw,40px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--body);
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%}
+a{color:inherit}
+
+/* grain, the only full-page treatment */
+body::after{
+  content:""; position:fixed; inset:-50%; pointer-events:none; z-index:60; opacity:.035;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
+
+.wrap{max-width:1120px; margin:0 auto; padding:0 var(--gut)}
+
+/* ---------- scroll progress ---------- */
+#prog{
+  position:fixed; top:0; left:0; height:2px; width:0; z-index:70;
+  background:linear-gradient(90deg,var(--cyan),var(--mag));
+}
+
+/* ---------- top bar ---------- */
+.bar{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  background:rgba(8,7,12,.72); border-bottom:1px solid var(--line-soft);
+}
+.bar .in{
+  max-width:1120px; margin:0 auto; padding:0 var(--gut);
+  height:54px; display:flex; align-items:center; gap:18px;
+}
+.bar .mark{font-family:var(--display); font-size:21px; letter-spacing:.11em; line-height:1}
+.bar nav{margin-left:auto; display:flex; gap:22px; font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase}
+.bar nav a{color:var(--dim); text-decoration:none; transition:color .18s ease}
+.bar nav a:hover{color:var(--cyan)}
+@media (max-width:720px){ .bar nav{display:none} }
+
+/* ---------- hero ---------- */
+header{padding:clamp(56px,10vw,104px) 0 0}
+.kicker{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--cyan); margin:0 0 20px;
+}
+h1{
+  font-family:var(--display); font-weight:400;
+  font-size:clamp(72px,15vw,180px); line-height:.82; letter-spacing:.005em;
+  margin:0 0 26px; color:var(--ink);
+}
+h1 em{font-style:normal; color:var(--gold)}
+.sub{max-width:56ch; color:var(--dim); font-size:17px; line-height:1.68; margin:0}
+.sub b{color:var(--ink); font-weight:500}
+.meta{
+  display:flex; flex-wrap:wrap; gap:8px 28px; margin:30px 0 0;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--faint);
+}
+.meta span b{color:var(--dim); font-weight:400}
+
+/* ---------- stage ---------- */
+.stage{
+  position:relative; margin:44px 0 0; border-radius:var(--r-lg); overflow:hidden;
+  border:1px solid var(--line); background:#06050a; aspect-ratio:16/10;
+  box-shadow:0 40px 120px -30px rgba(107,75,255,.42);
+}
+.stage spline-viewer,.stage iframe,.stage canvas{width:100%; height:100%; display:block; border:0; outline:none}
+
+/* ---------- control pad ---------- */
+.pad{margin:20px 0 0}
+.padhint{
+  display:flex; gap:10px; align-items:center; margin:0 0 14px;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
+}
+.padhint .dot{width:5px; height:5px; border-radius:50%; background:var(--cyan); flex:none}
+.padrow{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+@media (min-width:560px){ .padrow{grid-template-columns:repeat(4,1fr)} }
+.pb{
+  font-family:var(--display); font-weight:400; font-size:23px; letter-spacing:.09em;
+  text-transform:uppercase; line-height:1; padding:19px 10px 17px;
+  border:0; border-radius:14px; cursor:pointer; color:#0b0912;
+  background:var(--pbc); box-shadow:0 5px 0 var(--pbs), 0 12px 24px -10px rgba(0,0,0,.85);
+  transition:transform .08s ease, box-shadow .08s ease, filter .18s ease;
+}
+.pb:hover:not(:disabled){filter:brightness(1.1)}
+.pb:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--pbs)}
+.pb:focus-visible{outline:2px solid var(--ink); outline-offset:3px}
+.pb:disabled{opacity:.3; cursor:not-allowed; box-shadow:0 5px 0 var(--pbs)}
+.pb.c{--pbc:#3ef0ff; --pbs:#158fa0}
+.pb.m{--pbc:#ff3fa6; --pbs:#a3205f}
+.pb.g{--pbc:#ffd84a; --pbs:#a3860f}
+.pb.v{--pbc:#9d78ff; --pbs:#553099}
+@media (max-width:620px){ .pb{font-size:20px; padding:16px 8px 14px} }
+.stage .placeholder{position:absolute; inset:0; background:#06050a}
+.stage .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
+.stage .posterUI{
+  position:absolute; inset:auto 0 0 0; padding:80px 26px 30px; text-align:center;
+  display:grid; gap:10px; justify-items:center;
+  background:linear-gradient(to top, rgba(6,5,10,.95) 14%, transparent);
+}
+.placeholder .big{
+  font-family:var(--display); font-size:30px; letter-spacing:.14em; color:var(--gold); line-height:1;
+}
+.placeholder p{margin:0; color:var(--dim); font-size:13.5px; max-width:52ch; line-height:1.65}
+.placeholder code{font-family:var(--mono); font-size:12px; color:var(--cyan)}
+.hint{
+  display:flex; gap:10px; align-items:center; margin:16px 0 0;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
+}
+.hint .dot{width:5px; height:5px; border-radius:50%; background:var(--cyan); flex:none}
+
+/* ---------- ticker ---------- */
+.ticker{
+  margin:30px 0 0; border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft);
+  overflow:hidden; padding:11px 0;
+}
+.ticker .run{
+  display:flex; gap:44px; width:max-content; animation:slide 34s linear infinite;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint);
+}
+.ticker:hover .run{animation-play-state:paused}
+.ticker .run i{font-style:normal; color:var(--mag)}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){ .ticker .run{animation:none} }
+
+/* ---------- sections ---------- */
+section{padding:clamp(64px,9vw,112px) 0 0}
+.head{
+  display:grid; grid-template-columns:minmax(0,1fr); gap:10px;
+  padding-top:22px; border-top:1px solid var(--line); margin-bottom:34px;
+}
+.head .no{font-family:var(--mono); font-size:11.5px; letter-spacing:.2em; color:var(--gold)}
+h2{
+  font-family:var(--display); font-weight:400; font-size:clamp(34px,5vw,50px);
+  letter-spacing:.055em; text-transform:uppercase; margin:0; line-height:1;
+}
+h2 .accent{color:var(--cyan)}
+.lead{color:var(--dim); margin:4px 0 0; max-width:60ch; line-height:1.68; font-size:15.5px}
+@media (min-width:820px){
+  .head{grid-template-columns:150px minmax(0,1fr); gap:0 34px; align-items:start}
+  .head .no{padding-top:8px}
+  .head h2{grid-column:2}
+  .head .lead{grid-column:2}
+}
+
+/* ---------- controls ---------- */
+.controls{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1px; background:var(--line-soft);
+  border:1px solid var(--line-soft); border-radius:var(--r-md); overflow:hidden}
+.ctl{
+  display:flex; align-items:center; gap:14px; padding:16px 18px; background:var(--bg);
+  transition:background .2s ease;
+}
+.ctl:hover{background:#0d0b14}
+kbd{
+  font-family:var(--mono); font-weight:500; font-size:11.5px; letter-spacing:.04em;
+  min-width:44px; padding:7px 9px; text-align:center; border-radius:var(--r-sm);
+  color:var(--ink); border:1px solid var(--line); background:rgba(243,239,250,.05); flex:none;
+}
+kbd.c{color:var(--cyan); border-color:rgba(62,240,255,.34)}
+kbd.m{color:var(--mag); border-color:rgba(255,63,166,.34)}
+kbd.g{color:var(--gold); border-color:rgba(255,216,74,.34)}
+.ctl .t{font-size:14.5px; line-height:1.4}
+.ctl .t small{display:block; color:var(--faint); font-size:12.5px; margin-top:2px; line-height:1.5}
+
+/* ---------- polaroids ---------- */
+.strip{display:flex; gap:20px; overflow-x:auto; padding:6px 2px 24px; scroll-snap-type:x proximity}
+.strip::-webkit-scrollbar{height:6px}
+.strip::-webkit-scrollbar-thumb{background:rgba(243,239,250,.14); border-radius:99px}
+.pola{
+  flex:none; width:238px; scroll-snap-align:center; background:#efece4; border-radius:var(--r-sm);
+  padding:12px 12px 0; box-shadow:0 20px 40px -18px rgba(0,0,0,.9); color:#191320; margin:0;
+  transform:rotate(var(--r,0deg)); transition:transform .3s cubic-bezier(.2,.7,.3,1);
+}
+.pola:hover{transform:rotate(0deg) translateY(-8px)}
+.pola img{width:100%; aspect-ratio:4/3; object-fit:contain; display:block; background:#0b0912}
+.pola .cap{
+  font-family:var(--display); font-size:18px; letter-spacing:.07em; padding:11px 2px 14px; text-align:center; line-height:1.1;
+}
+.pola .cap small{
+  display:block; font-family:var(--mono); font-size:10px; letter-spacing:.11em;
+  text-transform:uppercase; color:#7a7186; margin-top:5px;
+}
+
+/* ---------- moodboard ---------- */
+.board{columns:3 250px; column-gap:14px}
+.pin{
+  break-inside:avoid; margin:0 0 14px; position:relative; border-radius:var(--r-md); overflow:hidden;
+  border:1px solid var(--line-soft); background:#0c0a12;
+  transition:transform .28s cubic-bezier(.2,.7,.3,1), border-color .28s ease;
+}
+.pin:hover{transform:translateY(-4px); border-color:rgba(62,240,255,.34)}
+.pin img{display:block; width:100%}
+.pin figcaption{
+  position:absolute; left:0; right:0; bottom:0; padding:30px 13px 11px;
+  background:linear-gradient(to top, rgba(6,5,10,.95), transparent);
+}
+.pin figcaption b{
+  font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.13em;
+  text-transform:uppercase; display:block; color:var(--gold); margin-bottom:3px;
+}
+.pin figcaption span{color:var(--dim); font-size:12.5px; line-height:1.5}
+@media (max-width:620px){ .board{columns:1} }
+@media (max-width:620px){ .stage{aspect-ratio:4/5} .meta{gap:6px 18px} }
+
+/* ---------- process ---------- */
+.steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px}
+.step{
+  position:relative; border-radius:var(--r-md); overflow:hidden; border:1px solid var(--line-soft);
+  background:#0a0810; margin:0; transition:border-color .25s ease;
+}
+.step:hover{border-color:rgba(62,240,255,.28)}
+.step img{display:block; width:100%; aspect-ratio:1/1; object-fit:cover; background:#0c0a12}
+.step .no{
+  position:absolute; top:10px; left:10px; font-family:var(--mono); font-size:10.5px;
+  letter-spacing:.12em; color:var(--bg); background:var(--cyan);
+  padding:3px 7px; border-radius:var(--r-sm);
+}
+.step .txt{padding:13px 14px 16px}
+.step .txt b{
+  font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.13em;
+  text-transform:uppercase; display:block; color:var(--ink);
+}
+.step .txt span{display:block; color:var(--dim); font-size:12.5px; line-height:1.55; margin-top:5px}
+
+/* ---------- shader horizon ---------- */
+.horizon{
+  position:relative; margin:clamp(64px,9vw,112px) 0 0; border-radius:var(--r-lg); overflow:hidden;
+  border:1px solid var(--line); background:#06050a; aspect-ratio:21/8;
+}
+.horizon canvas{display:block; width:100%; height:100%}
+.horizon .tag{
+  position:absolute; left:0; right:0; bottom:0; padding:54px 22px 18px; text-align:center;
+  background:linear-gradient(to top, rgba(6,5,10,.94), transparent);
+  font-size:13px; color:var(--dim); line-height:1.65; margin:0;
+}
+.horizon .tag b{color:var(--ink); font-weight:500}
+.horizon .fallback{
+  position:absolute; inset:0; display:grid; place-content:center;
+  color:var(--faint); font-family:var(--mono); font-size:12px;
+}
+
+/* ---------- build notes ---------- */
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:1px;
+  background:var(--line-soft); border:1px solid var(--line-soft); border-radius:var(--r-md); overflow:hidden}
+.card{padding:24px 22px 26px; background:var(--bg); transition:background .2s ease}
+.card:hover{background:#0d0b14}
+.card h3{
+  font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.15em;
+  text-transform:uppercase; margin:0 0 12px; color:var(--gold);
+}
+.card p{margin:0; color:var(--dim); font-size:14px; line-height:1.68}
+.card p b{color:var(--ink); font-weight:500}
+
+.stats{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:26px 18px;
+  margin:44px 0 0; padding:26px 0 0; border-top:1px solid var(--line);
+}
+.stat .n{font-family:var(--display); font-size:40px; color:var(--ink); line-height:1}
+.stat .l{font-family:var(--mono); font-size:10.5px; color:var(--faint); letter-spacing:.14em; text-transform:uppercase; margin-top:7px}
+@media (min-width:700px){ .stats{grid-template-columns:repeat(6,1fr)} }
+
+/* ---------- footer ---------- */
+footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); border-top:1px solid var(--line)}
+.credit{text-align:center}
+.credit small{
+  display:block; font-family:var(--mono); font-size:11px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--cyan); margin-bottom:14px;
+}
+.credit .by{
+  font-family:var(--display); font-weight:400; font-size:clamp(34px,6vw,58px);
+  letter-spacing:.055em; text-transform:uppercase; line-height:1; margin:0;
+}
+.credit .by a.me{
+  color:var(--ink); text-decoration:none;
+  border-bottom:2px solid rgba(255,216,74,.34); padding-bottom:4px;
+  transition:border-color .22s ease, color .22s ease;
+}
+.credit .by a.me:hover{color:var(--gold); border-bottom-color:var(--cyan)}
+.credit .love{margin:20px 0 0; color:var(--dim); font-size:15px}
+.coin{display:inline-block; width:1.1em; height:1.1em; vertical-align:-.18em;
+  filter:drop-shadow(0 0 8px rgba(255,216,74,.5))}
+.coin.spin{animation:flip 4.6s cubic-bezier(.5,0,.5,1) infinite}
+@keyframes flip{0%,64%{transform:rotateY(0)}82%{transform:rotateY(360deg)}100%{transform:rotateY(360deg)}}
+@media (prefers-reduced-motion:reduce){ .coin.spin{animation:none} }
+.colophon{
+  margin:40px auto 0; max-width:64ch; text-align:center;
+  font-family:var(--mono); font-size:11.5px; line-height:1.9; color:var(--faint); letter-spacing:.02em;
+}
+.colophon b{color:var(--dim); font-weight:400}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s cubic-bezier(.2,.7,.3,1)}
+.rv.in{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){ .rv{opacity:1; transform:none; transition:none} }
+</style>
+</head>
+<body>
+<div id="prog"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="coinG" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#fff6c2"/><stop offset=".45" stop-color="#ffd84a"/><stop offset="1" stop-color="#e0a516"/>
+</linearGradient>
+<symbol id="token" viewBox="0 0 32 32">
+  <circle cx="16" cy="16" r="15" fill="#c9971c"/>
+  <circle cx="16" cy="16" r="12.6" fill="url(#coinG)"/>
+  <circle cx="16" cy="16" r="9.6" fill="none" stroke="#b8860f" stroke-width="1.1" opacity=".55"/>
+  <path fill="#8a6407" d="M16 7.1l2.45 5.18 5.65.76-4.15 3.96 1.05 5.66L16 19.9l-5 2.76 1.05-5.66-4.15-3.96 5.65-.76z"/>
+</symbol>
+</defs></svg>
+
+<div class="bar">
+  <div class="in">
+    <div class="mark">Last Token</div>
+    <nav>
+      <a href="#controls">Controls</a>
+      <a href="#strip">Strip</a>
+      <a href="#ideas">Ideas</a>
+      <a href="#robot">Robot</a>
+      <a href="#made">Made</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="kicker">A WebGL study in animation, controls and interaction</p>
+    <h1>Last<br><em>Token</em></h1>
+    <p class="sub">An isometric arcade that closed decades ago, still running on its final credit. Walk the robot around with the arrow keys, dance on the floor tiles, and get your picture taken at the booth. Every prop, sticker, sound and voice line in here was <b>generated and wired by hand</b>.</p>
+    <div class="meta">
+      <span><b>Real time</b> WebGL</span>
+      <span><b>242</b> objects</span>
+      <span><b>120</b> BPM</span>
+      <span><b>2026</b></span>
+    </div>
+  </header>
+
+  <div class="stage rv">
+    <!-- Live WebGL scene. Paste the published scene URL into SCENE_URL at the bottom of this file. -->
+    <canvas id="scene" tabindex="0" aria-label="The Last Token arcade, running live"></canvas>
+    <div class="placeholder" id="ph">
+      <img class="poster" src="img/scene/hero-iso.jpg" alt="The Last Token arcade, seen from above">
+      <div class="posterUI">
+        <div class="big">Insert coin</div>
+        <p>A still of the scene. The live version drops in here the moment <code>SCENE_URL</code> at the bottom of this file is filled in.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad rv">
+    <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Arrow keys walk him, Space jumps.</p>
+    <div class="padrow">
+      <button class="pb c" data-do="Do Samba" disabled>Samba</button>
+      <button class="pb m" data-do="Do HipHop" disabled>Hip Hop</button>
+      <button class="pb g" data-do="Do Cheer" disabled>Cheer</button>
+      <button class="pb v" data-do="Do Wave" disabled>Wave</button>
+      <button class="pb c" data-do="Do Thumbs" disabled>Thumbs</button>
+      <button class="pb m" data-do="Do Look" disabled>Look</button>
+      <button class="pb g" data-do="Do Zombie" disabled>Zombie</button>
+      <button class="pb v" data-do="Do Photo" disabled>Photo</button>
+    </div>
+  </div>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="run">
+      <span>Insert coin <i>/</i> Say cheese <i>/</i> Break it down <i>/</i> Woo hoo, yeah <i>/</i> Hey there <i>/</i> Nice, thumbs up <i>/</i> Where is the DJ <i>/</i> Braaains, beep boop <i>/</i></span>
+      <span>Insert coin <i>/</i> Say cheese <i>/</i> Break it down <i>/</i> Woo hoo, yeah <i>/</i> Hey there <i>/</i> Nice, thumbs up <i>/</i> Where is the DJ <i>/</i> Braaains, beep boop <i>/</i></span>
+    </div>
+  </div>
+
+  <section id="controls">
+    <div class="head rv">
+      <div class="no">01 / Controls</div>
+      <h2>Ten <span class="accent">keys</span></h2>
+      <p class="lead">Arrow keys move, everything else is a party trick. Every emote below also sits on one of the arcade buttons right under the scene, so nobody has to memorise a keyboard to see the robot move. The flash and the floor ring only fire where they belong: stand on the photo podium or the dance tiles and they answer.</p>
+    </div>
+    <div class="controls rv">
+      <div class="ctl"><kbd>&uarr;&darr;&larr;&rarr;</kbd><div class="t">Walk<small>Shift or Ctrl to run</small></div></div>
+      <div class="ctl"><kbd>Space</kbd><div class="t">Jump<small>Servo boing included</small></div></div>
+      <div class="ctl"><kbd class="g">F</kbd><div class="t">Photo booth<small>On the podium: flash, "say cheese", a print slides out</small></div></div>
+      <div class="ctl"><kbd class="c">1</kbd><div class="t">Samba<small>On the tiles: the centre ring lights up cyan</small></div></div>
+      <div class="ctl"><kbd class="c">2</kbd><div class="t">Hip hop<small>"Break it down!"</small></div></div>
+      <div class="ctl"><kbd class="m">C</kbd><div class="t">Cheer<small>"Woo-hoo! Yeah!"</small></div></div>
+      <div class="ctl"><kbd class="m">H</kbd><div class="t">Wave<small>"Hey there!"</small></div></div>
+      <div class="ctl"><kbd class="m">T</kbd><div class="t">Thumbs up<small>"Nice! Thumbs up!"</small></div></div>
+      <div class="ctl"><kbd class="m">L</kbd><div class="t">Look around<small>"Hmm, where's the DJ?"</small></div></div>
+      <div class="ctl"><kbd class="g">Z</kbd><div class="t">Zombie walk<small>"Braaains, beep boop."</small></div></div>
+    </div>
+  </section>
+
+  <section id="strip">
+    <div class="head rv">
+      <div class="no">02 / Artwork</div>
+      <h2>The <span class="accent">strip</span></h2>
+      <p class="lead">Marquees and props, generated for the level and cut by hand. The three signs are mounted on posts in the scene; the props were reconstructed into 3D and placed on the floor.</p>
+    </div>
+    <div class="strip rv">
+      <figure class="pola" style="--r:-2.4deg"><img src="img/marquee-galaxy-drift.png" alt="Galaxy Drift marquee"><figcaption class="cap">Galaxy Drift<small>north sign</small></figcaption></figure>
+      <figure class="pola" style="--r:1.8deg"><img src="img/marquee-token-rush.png" alt="Token Rush marquee"><figcaption class="cap">Token Rush<small>east sign</small></figcaption></figure>
+      <figure class="pola" style="--r:-1.2deg"><img src="img/marquee-disco-panic.png" alt="Disco Panic marquee"><figcaption class="cap">Disco Panic<small>west sign</small></figcaption></figure>
+      <figure class="pola" style="--r:2.6deg"><img src="img/arcade-screen-512.png" alt="Pixel art arcade screen"><figcaption class="cap">Attract mode<small>cabinet screen</small></figcaption></figure>
+      <figure class="pola" style="--r:-2deg"><img src="img/speaker-tower-01.jpg" alt="Speaker tower reference"><figcaption class="cap">Speaker tower<small>prop reference</small></figcaption></figure>
+      <figure class="pola" style="--r:1.4deg"><img src="img/photo-booth-01.jpg" alt="Photo booth reference"><figcaption class="cap">Photo booth<small>prop reference</small></figcaption></figure>
+      <figure class="pola" style="--r:-1.6deg"><img src="img/neon-palm-01.jpg" alt="Neon palm reference"><figcaption class="cap">Neon palm<small>prop reference</small></figcaption></figure>
+      <figure class="pola" style="--r:2.2deg"><img src="img/arcade-cabinet-01.jpg" alt="Arcade cabinet reference"><figcaption class="cap">Cabinet<small>prop reference</small></figcaption></figure>
+    </div>
+  </section>
+
+  <section id="ideas">
+    <div class="head rv">
+      <div class="no">03 / Research</div>
+      <h2>First <span class="accent">ideas</span></h2>
+      <p class="lead">Before anything was modelled, the level was argued out in pictures: how high the neon sits, where the checkerboard stops, what a station looks like from above. Most of these never made it in whole, but they set the palette and the rules.</p>
+    </div>
+    <div class="board rv">
+      <figure class="pin"><img src="img/ideas/level-ref-01-neon-floor.jpg" alt="Neon floor concept"><figcaption><b>Neon floor</b><span>The grid, the glow line, the black around it</span></figcaption></figure>
+      <figure class="pin"><img src="img/ideas/station-dance-floor.jpg" alt="Dance floor station concept"><figcaption><b>Dance station</b><span>Lit tiles as a place you stand, not decoration</span></figcaption></figure>
+      <figure class="pin"><img src="img/ideas/level-ref-02-checker-boombox.jpg" alt="Checker and boombox concept"><figcaption><b>Checker &amp; radio</b><span>Where the black-and-white belongs</span></figcaption></figure>
+      <figure class="pin"><img src="img/ideas/level-ref-04-hud-arcade.jpg" alt="HUD and arcade concept"><figcaption><b>HUD &amp; cabinets</b><span>What the screen furniture should feel like</span></figcaption></figure>
+      <figure class="pin"><img src="img/ideas/level-ref-03-8bit-zone.jpg" alt="8-bit zone concept"><figcaption><b>8-bit zone</b><span>The pixel language for the cabinet screen</span></figcaption></figure>
+      <figure class="pin"><img src="img/ideas/marquee-sheet-01.jpg" alt="Marquee sticker sheet"><figcaption><b>Marquee sheet</b><span>Six signs generated together, then cut out by hand</span></figcaption></figure>
+    </div>
+  </section>
+
+  <section id="robot">
+    <div class="head rv">
+      <div class="no">04 / Character</div>
+      <h2>Building the <span class="accent">robot</span></h2>
+      <p class="lead">The hero took the longest road: drawn, reconstructed into geometry, rigged, then rebuilt again in Blender when every clip turned out to float a few units above the floor.</p>
+    </div>
+    <div class="steps rv">
+      <figure class="step"><span class="no">01</span><img src="img/process/robot-hero.jpg" alt="Robot concept render"><figcaption class="txt"><b>Concept</b><span>The character, before it had any geometry</span></figcaption></figure>
+      <figure class="step"><span class="no">02</span><img src="img/process/robot-turnaround.jpg" alt="Robot turnaround views"><figcaption class="txt"><b>Turnaround</b><span>Views generated so it could be reconstructed</span></figcaption></figure>
+      <figure class="step"><span class="no">03</span><img src="img/process/robot-tripo-texture-latest.jpg" alt="Reconstructed robot with baked texture"><figcaption class="txt"><b>Reconstructed</b><span>Image to 3D, chrome and cream baked in</span></figcaption></figure>
+      <figure class="step"><span class="no">04</span><img src="img/process/robot-mixamo-rigged.jpg" alt="Robot auto-rigged"><figcaption class="txt"><b>Rigged</b><span>Auto-rigged so it could take motion clips</span></figcaption></figure>
+      <figure class="step"><span class="no">05</span><img src="img/process/robot-mixamo-anims-pack.jpg" alt="Animation clip pack"><figcaption class="txt"><b>Clip pack</b><span>Eleven clips, merged into one file in Blender</span></figcaption></figure>
+    </div>
+  </section>
+
+  <div class="horizon rv" id="horizon">
+    <div class="fallback">This browser could not start WebGL for the horizon panel.</div>
+    <p class="tag">Two kinds of WebGL on one page: the scene above was <b>authored in an editor</b> and driven by events, this horizon is <b>one quad and a fragment shader</b>, roughly forty lines of maths. Same pixels, opposite ends of the craft.</p>
+  </div>
+
+  <section id="made">
+    <div class="head rv">
+      <div class="no">05 / Build notes</div>
+      <h2>How it was <span class="accent">made</span></h2>
+      <p class="lead">Four pipelines feeding one real-time scene, wired through its event system.</p>
+    </div>
+    <div class="cards rv">
+      <div class="card">
+        <h3>The robot</h3>
+        <p>Mixamo clips rebuilt in <b>Blender</b> into a single multi-clip GLB. Importing clips as separate files made the engine keep the base hips height, so every animation floated above the floor. One file fixed it at the source. Eleven clips: idle, walk, run, jump, wave, cheer, thumbs up, look around, samba, hip hop, zombie.</p>
+      </div>
+      <div class="card">
+        <h3>The props</h3>
+        <p>Single-subject references generated per prop, then reconstructed with <b>Tripo</b> image to 3D at v3.1 Ultra: triangles, 40k cap, 8K texture bake exported at 2K, lighting removed from the albedo so the scene's own neon does the shading.</p>
+      </div>
+      <div class="card">
+        <h3>The sound</h3>
+        <p>Every effect is <b>synthesized</b>, not sampled: the shutter is a capacitor whine plus a noise burst, the dance stab is a square-wave arpeggio, the soundtrack is a 120&nbsp;BPM loop built from kick, snare, hats, square bass and saw arp. The announcer is text to speech directed to sound like a cabinet.</p>
+      </div>
+      <div class="card">
+        <h3>The gating</h3>
+        <p>Trigger zones and conditionals would not fire, so the zones became <b>collision pads that move</b>. A pulsing podium and the bouncing dance tiles re-touch the robot every beat, set a variable, and that variable is bound directly to the effect's geometry. No conditionals anywhere.</p>
+      </div>
+      <div class="card">
+        <h3>The beat</h3>
+        <p>Everything that loops runs on the same 120&nbsp;BPM grid: the floor ripples in quarter-beat steps, the speakers and radio move on the beat, the disco spots sweep every sixteen. The scene pulses with the music rather than near it.</p>
+      </div>
+      <div class="card">
+        <h3>The light</h3>
+        <p>Twelve lights, exactly <b>one</b> casting shadows. Past that, imported PBR props silently stop rendering while still casting shadows, a failure that looks like a broken import and is not. The disco beams are real spotlights; the earlier mesh beams kept shoving the robot off the stage.</p>
+      </div>
+    </div>
+
+    <div class="stats rv">
+      <div class="stat"><div class="n">242</div><div class="l">objects</div></div>
+      <div class="stat"><div class="n">11</div><div class="l">animation clips</div></div>
+      <div class="stat"><div class="n">14</div><div class="l">sounds &amp; voice</div></div>
+      <div class="stat"><div class="n">11</div><div class="l">3D props</div></div>
+      <div class="stat"><div class="n">12</div><div class="l">lights</div></div>
+      <div class="stat"><div class="n">120</div><div class="l">bpm</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="credit rv">
+      <small>Made by</small>
+      <p class="by"><a class="me" href="https://ampenaranda.design" target="_blank" rel="noopener">Ana M. Penaranda</a></p>
+      <p class="love">and many other tokens of love <svg class="coin spin"><use href="#token"/></svg></p>
+    </div>
+    <p class="colophon"><b>Last Token</b>. A real-time WebGL scene, built and driven entirely through code. Animation from Mixamo by way of Blender, props reconstructed with Tripo, marquees and pixel art generated, every sound synthesized or spoken by TTS. Insert coin.</p>
+  </footer>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   THE ONE LINE TO EDIT
+   Paste the published scene URL between the quotes, for example
+   "https://prod.spline.design/XXXXXXXX/scene.splinecode".
+   In Spline: Export, Viewer (Integrated Embed), copy the URL shown
+   at the top of the panel. Leave it empty to keep the poster.
+   --------------------------------------------------------------- */
+const SCENE_URL = "https://prod.spline.design/rJUXqttIzJQ4ioAj/scene.splinecode";
+
+/* A self-hosted export dropped at scene/scene.splinecode is used automatically. */
+const LOCAL_SCENE = "scene/scene.splinecode";
+
+/* The scene carries one invisible hook object per emote. Clicking a button
+   fires that hook's MouseDown event inside the scene. */
+let splineApp = null;
+const padhint = document.getElementById("padhint");
+const canvas = document.getElementById("scene");
+
+document.querySelectorAll(".pb").forEach((b) => {
+  b.addEventListener("click", () => {
+    if (!splineApp) return;
+    try {
+      splineApp.emitEvent("mouseDown", b.dataset.do);
+    } catch (err) {
+      console.warn("Last Token: could not reach " + b.dataset.do, err);
+    }
+    canvas.focus();
+  });
+});
+
+(async function () {
+  let url = SCENE_URL;
+  if (!url) {
+    try {
+      const probe = await fetch(LOCAL_SCENE, { method: "HEAD" });
+      if (probe.ok) url = LOCAL_SCENE;
+    } catch (_) { /* a file:// page cannot fetch; the poster stays */ }
+  }
+
+  if (!url) {
+    padhint.innerHTML =
+      '<span class="dot"></span> The buttons wake up once the live scene is connected. This is a still for now.';
+    return;
+  }
+
+  try {
+    const { Application } = await import(
+      "https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.9.28/build/runtime.js"
+    );
+    const app = new Application(canvas);
+    await app.load(url);
+    splineApp = app;
+
+    const ph = document.getElementById("ph");
+    if (ph) {
+      ph.style.transition = "opacity .6s ease";
+      ph.style.opacity = "0";
+      setTimeout(() => ph.remove(), 700);
+    }
+    document.querySelectorAll(".pb").forEach((b) => { b.disabled = false; });
+  } catch (err) {
+    console.warn("Last Token: the live scene did not load, keeping the poster.", err);
+    padhint.innerHTML =
+      '<span class="dot"></span> The live scene did not load, so the buttons are off. This is a still.';
+  }
+})();
+
+/* scroll progress */
+(function () {
+  const bar = document.getElementById("prog");
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+  };
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* reveal on scroll */
+(function () {
+  const items = document.querySelectorAll(".rv");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    items.forEach((el) => el.classList.add("in"));
+    return;
+  }
+  if (!("IntersectionObserver" in window)) {
+    items.forEach((el) => el.classList.add("in"));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, { rootMargin: "0px 0px -40px 0px", threshold: 0 });
+  items.forEach((el) => io.observe(el));
+  // safety net: anything already on screen must never stay invisible
+  setTimeout(() => {
+    items.forEach((el) => {
+      if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in");
+    });
+  }, 2200);
+})();
+</script>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+
+const host = document.getElementById("horizon");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+try {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "low-power" });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  host.querySelector(".fallback").remove();
+  host.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const uniforms = { uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) } };
+
+  const material = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: `
+      varying vec2 vUv;
+      void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+    `,
+    fragmentShader: `
+      precision highp float;
+      uniform float uTime; uniform vec2 uRes; varying vec2 vUv;
+
+      void main(){
+        vec2 uv = vUv * 2.0 - 1.0;
+        uv.x *= uRes.x / uRes.y;
+        float hz = -0.10;
+        vec3 col = mix(vec3(0.030,0.018,0.062), vec3(0.115,0.028,0.185),
+                       smoothstep(hz, 1.2, uv.y));
+
+        vec2 s = uv - vec2(0.0, hz + 0.42);
+        float d = length(vec2(s.x, s.y * 1.12));
+        float sun = smoothstep(0.40, 0.385, d);
+        float bands = step(0.34, fract((uv.y - hz) * 13.0));
+        float solid = smoothstep(0.0, 0.34, uv.y - hz - 0.26);
+        sun *= mix(bands, 1.0, solid);
+        vec3 sunCol = mix(vec3(1.0, 0.88, 0.29), vec3(1.0, 0.18, 0.63),
+                          clamp((hz + 0.86 - uv.y) * 1.25, 0.0, 1.0));
+        col = mix(col, sunCol, sun);
+
+        if (uv.y < hz) {
+          float z  = 1.0 / (hz - uv.y + 0.0015);
+          float xw = uv.x * z * 0.55;
+          float zw = z * 0.5 + uTime * 0.85;
+          float gx = abs(fract(xw) - 0.5);
+          float gz = abs(fract(zw) - 0.5);
+          float w  = clamp(0.013 * z, 0.006, 0.32);
+          float line = smoothstep(w, 0.0, gx) + smoothstep(w, 0.0, gz) * 0.85;
+          float near = smoothstep(0.62, 0.0, hz - uv.y);
+          float far  = smoothstep(46.0, 7.0, z);
+          vec3 g = mix(vec3(0.18, 0.94, 1.0), vec3(1.0, 0.18, 0.63),
+                       clamp(uv.x * 0.45 + 0.5, 0.0, 1.0));
+          col += g * line * 0.62 * near * far;
+        }
+
+        col += vec3(1.0, 0.42, 0.86) * 0.30 * exp(-abs(uv.y - hz) * 22.0);
+        col *= 1.0 - 0.35 * pow(length(vUv * 2.0 - 1.0) * 0.72, 3.0);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+  });
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+
+  const resize = () => {
+    const w = host.clientWidth, h = host.clientHeight;
+    renderer.setSize(w, h, false);
+    uniforms.uRes.value.set(w, h);
+  };
+  resize();
+  addEventListener("resize", resize);
+
+  let visible = false, raf = 0;
+  const clock = new THREE.Clock();
+  const frame = () => {
+    raf = requestAnimationFrame(frame);
+    if (!reduce) uniforms.uTime.value += clock.getDelta();
+    renderer.render(scene, camera);
+  };
+  new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting && !visible) { visible = true; clock.getDelta(); frame(); }
+      else if (!e.isIntersecting && visible) { visible = false; cancelAnimationFrame(raf); }
+    }
+  }, { rootMargin: "120px" }).observe(host);
+} catch (err) {
+  console.warn("horizon panel skipped:", err);
+}
+</script>
+</body>
+</html>
