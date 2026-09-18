@@ -90,29 +90,45 @@ h1 em{font-style:normal; color:var(--gold)}
 }
 .meta span b{color:var(--dim); font-weight:400}
 
-/* ---------- stage ---------- */
-.stage{
-  position:relative; margin:44px 0 0; border-radius:var(--r-lg); overflow:hidden;
-  border:1px solid var(--line); background:#06050a; aspect-ratio:16/10;
-  box-shadow:0 40px 120px -30px rgba(107,75,255,.42);
+/* ---------- theater ---------- */
+.theater{
+  position:relative; margin:44px 0 0; padding:0;
+  height:100svh; min-height:620px; max-height:1140px;
+  display:grid; grid-template-rows:1fr auto;
+  background:#06050a; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.stage{position:relative; overflow:hidden; background:#06050a}
+/* The scene fills its frame, so a frame narrower than the diorama crops the
+   palms off the corners. Below a laptop width the stage keeps the diorama's
+   own shape instead of the viewport's. */
+@media (max-width:900px){
+  .theater{height:auto; min-height:0; max-height:none}
+  .stage{aspect-ratio:7/5}
 }
 .stage spline-viewer,.stage iframe,.stage canvas{width:100%; height:100%; display:block; border:0; outline:none}
 
-/* ---------- control pad ---------- */
-.pad{margin:20px 0 0}
+/* ---------- control deck ---------- */
+.pad{
+  padding:12px var(--gut) 16px; background:#09080f;
+  border-top:1px solid var(--line); box-shadow:0 -34px 70px -34px rgba(107,75,255,.55);
+}
+.padin{max-width:1120px; margin:0 auto}
 .padhint{
-  display:flex; gap:10px; align-items:center; margin:0 0 14px;
+  display:flex; gap:10px; align-items:center; margin:0 0 10px;
   font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
 }
 .padhint .dot{width:5px; height:5px; border-radius:50%; background:var(--cyan); flex:none}
-.padrow{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
-@media (min-width:560px){ .padrow{grid-template-columns:repeat(4,1fr)} }
+.padrow{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
 .pb{
-  font-family:var(--display); font-weight:400; font-size:23px; letter-spacing:.09em;
-  text-transform:uppercase; line-height:1; padding:19px 10px 17px;
-  border:0; border-radius:14px; cursor:pointer; color:#0b0912;
+  position:relative; font-family:var(--display); font-weight:400; font-size:23px; letter-spacing:.09em;
+  text-transform:uppercase; line-height:1; padding:16px 10px 14px;
+  border:0; border-radius:13px; cursor:pointer; color:#0b0912;
   background:var(--pbc); box-shadow:0 5px 0 var(--pbs), 0 12px 24px -10px rgba(0,0,0,.85);
   transition:transform .08s ease, box-shadow .08s ease, filter .18s ease;
+}
+.pb .k{
+  position:absolute; top:6px; right:9px; font-family:var(--mono); font-size:9.5px;
+  letter-spacing:.04em; opacity:.45; font-weight:500;
 }
 .pb:hover:not(:disabled){filter:brightness(1.1)}
 .pb:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--pbs)}
@@ -122,7 +138,7 @@ h1 em{font-style:normal; color:var(--gold)}
 .pb.m{--pbc:#ff3fa6; --pbs:#a3205f}
 .pb.g{--pbc:#ffd84a; --pbs:#a3860f}
 .pb.v{--pbc:#9d78ff; --pbs:#553099}
-@media (max-width:620px){ .pb{font-size:20px; padding:16px 8px 14px} }
+@media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{display:none} .padrow{gap:8px} .pad{padding-bottom:16px} }
 .stage .placeholder{position:absolute; inset:0; background:#06050a}
 .stage .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
 .stage .posterUI{
@@ -232,7 +248,7 @@ kbd.g{color:var(--gold); border-color:rgba(255,216,74,.34)}
 }
 .pin figcaption span{color:var(--dim); font-size:12.5px; line-height:1.5}
 @media (max-width:620px){ .board{columns:1} }
-@media (max-width:620px){ .stage{aspect-ratio:4/5} .meta{gap:6px 18px} }
+@media (max-width:620px){ .meta{gap:6px 18px} }
 
 /* ---------- process ---------- */
 .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px}
@@ -368,31 +384,39 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
     </div>
   </header>
 
-  <div class="stage rv">
-    <!-- Live WebGL scene. Paste the published scene URL into SCENE_URL at the bottom of this file. -->
+</div><!-- /wrap -->
+
+<section class="theater rv">
+  <div class="stage">
+    <!-- Live WebGL scene. The published scene URL lives in SCENE_URL at the bottom of this file. -->
     <canvas id="scene" tabindex="0" aria-label="The Last Token arcade, running live"></canvas>
     <div class="placeholder" id="ph">
       <img class="poster" src="img/scene/hero-iso.jpg" alt="The Last Token arcade, seen from above">
       <div class="posterUI">
         <div class="big">Insert coin</div>
-        <p>A still of the scene. The live version drops in here the moment <code>SCENE_URL</code> at the bottom of this file is filled in.</p>
+        <p>Warming up the cabinet. The live scene drops in here in a moment.</p>
       </div>
     </div>
   </div>
 
-  <div class="pad rv">
-    <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Arrow keys walk him, Space jumps.</p>
-    <div class="padrow">
-      <button class="pb c" data-do="Do Samba" disabled>Samba</button>
-      <button class="pb m" data-do="Do HipHop" disabled>Hip Hop</button>
-      <button class="pb g" data-do="Do Cheer" disabled>Cheer</button>
-      <button class="pb v" data-do="Do Wave" disabled>Wave</button>
-      <button class="pb c" data-do="Do Thumbs" disabled>Thumbs</button>
-      <button class="pb m" data-do="Do Look" disabled>Look</button>
-      <button class="pb g" data-do="Do Zombie" disabled>Zombie</button>
-      <button class="pb v" data-do="Do Photo" disabled>Photo</button>
+  <div class="pad">
+    <div class="padin">
+      <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Arrow keys walk him, Space jumps.</p>
+      <div class="padrow">
+        <button class="pb c" data-key="1" disabled>Samba<span class="k">1</span></button>
+        <button class="pb m" data-key="2" disabled>Hip Hop<span class="k">2</span></button>
+        <button class="pb g" data-key="c" disabled>Cheer<span class="k">C</span></button>
+        <button class="pb v" data-key="h" disabled>Wave<span class="k">H</span></button>
+        <button class="pb c" data-key="t" disabled>Thumbs<span class="k">T</span></button>
+        <button class="pb m" data-key="l" disabled>Look<span class="k">L</span></button>
+        <button class="pb g" data-key="z" disabled>Zombie<span class="k">Z</span></button>
+        <button class="pb v" data-key="f" disabled>Photo<span class="k">F</span></button>
+      </div>
     </div>
   </div>
+</section>
+
+<div class="wrap">
 
   <div class="ticker" aria-hidden="true">
     <div class="run">
@@ -541,21 +565,33 @@ const SCENE_URL = "https://prod.spline.design/rJUXqttIzJQ4ioAj/scene.splinecode"
 /* A self-hosted export dropped at scene/scene.splinecode is used automatically. */
 const LOCAL_SCENE = "scene/scene.splinecode";
 
-/* The scene carries one invisible hook object per emote. Clicking a button
-   fires that hook's MouseDown event inside the scene. */
+/* Every emote lives on a KeyDown event on the robot inside the scene, and each
+   one plays a sound, an announcer line, the clip, and the return to idle. The
+   buttons press those keys rather than duplicating the actions, so a click and
+   a keypress do exactly the same thing. One dispatch on `document` is enough:
+   the runtime's listener sits above it and catches the event as it bubbles. */
 let splineApp = null;
 const padhint = document.getElementById("padhint");
 const canvas = document.getElementById("scene");
 
+function pressKey(key) {
+  const upper = key.toUpperCase();
+  const init = {
+    key: key,
+    code: /^[0-9]$/.test(key) ? "Digit" + key : "Key" + upper,
+    keyCode: upper.charCodeAt(0),
+    which: upper.charCodeAt(0),
+    bubbles: true,
+    cancelable: true,
+  };
+  document.dispatchEvent(new KeyboardEvent("keydown", init));
+  setTimeout(() => document.dispatchEvent(new KeyboardEvent("keyup", init)), 90);
+}
+
 document.querySelectorAll(".pb").forEach((b) => {
   b.addEventListener("click", () => {
-    if (!splineApp) return;
-    try {
-      splineApp.emitEvent("mouseDown", b.dataset.do);
-    } catch (err) {
-      console.warn("Last Token: could not reach " + b.dataset.do, err);
-    }
     canvas.focus();
+    pressKey(b.dataset.key);
   });
 });
 

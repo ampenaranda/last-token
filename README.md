@@ -38,30 +38,48 @@ Then open http://localhost:8765.
 ## How the page talks to the scene
 
 The scene is published from Spline and loaded with the Spline runtime rather
-than the `<spline-viewer>` element, because the runtime hands back an
-application object the page can send events to.
+than the `<spline-viewer>` element, so the page holds an application object and
+the canvas can be sized and driven directly.
 
 ```js
 const { Application } = await import(
   "https://cdn.jsdelivr.net/npm/@splinetool/runtime@1.9.28/build/runtime.js"
 );
-const app = new Application(document.getElementById("scene"));
-await app.load(SCENE_URL);
-app.emitEvent("mouseDown", "Do Samba");
+await new Application(document.getElementById("scene")).load(SCENE_URL);
 ```
 
-Inside the scene there is one invisible hook object per emote, named `Do Samba`,
-`Do HipHop`, `Do Cheer`, `Do Wave`, `Do Thumbs`, `Do Look`, `Do Zombie` and
-`Do Photo`. Each carries a MouseDown event that plays the matching animation
-clip on the robot and returns it to idle afterwards. The hooks are parked far
-below the floor so nothing shows in the render. `emitEvent` does not raycast, so
-a hidden hook still fires.
+Every emote already lives inside the scene as a KeyDown event on the robot, and
+each one carries the whole performance: a sound effect, an announcer line, the
+animation clip, and the timed return to idle. So the buttons do not re-implement
+any of that. They press the key.
 
-The eight buttons under the canvas are ordinary HTML. They stay disabled until
-the scene finishes loading, and the hint line above them says why.
+```js
+document.dispatchEvent(new KeyboardEvent("keydown", { key: "1", code: "Digit1", ... }));
+```
+
+One dispatch on `document` is enough — the runtime's listener sits above it and
+catches the event as it bubbles. Clicking **Samba** and pressing **1** are
+therefore the same action, down to the audio, and there is only one copy of the
+behaviour to maintain. The earlier approach, invisible hook objects fired with
+`emitEvent("mouseDown", ...)`, played the clip but left the sound behind.
+
+| Button | Key | Button | Key |
+|---|---|---|---|
+| Samba | `1` | Thumbs | `T` |
+| Hip Hop | `2` | Look | `L` |
+| Cheer | `C` | Zombie | `Z` |
+| Wave | `H` | Photo | `F` |
+
+The buttons stay disabled until the scene finishes loading, and the hint line
+above them says why.
 
 Arrow keys walk the robot and Space makes him jump. Those are Spline's own Game
-Control, so they need the canvas focused; clicking any button focuses it.
+Control.
+
+The stage fills the viewport on a laptop or desktop. Below 900px the scene would
+be framed narrower than the diorama, and because the runtime fills its canvas
+rather than letterboxing, that crops the neon palms off the corners — so at those
+widths the stage keeps the diorama's own 7:5 shape instead of the viewport's.
 
 ## Changing the scene
 
