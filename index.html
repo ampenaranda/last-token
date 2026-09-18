@@ -93,7 +93,7 @@ h1 em{font-style:normal; color:var(--gold)}
 /* ---------- theater ---------- */
 .theater{
   position:relative; margin:44px 0 0; padding:0;
-  height:100svh; min-height:620px; max-height:1140px;
+  height:86svh; min-height:560px; max-height:1000px;
   display:grid; grid-template-rows:1fr auto;
   background:#06050a; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
 }
@@ -113,6 +113,21 @@ h1 em{font-style:normal; color:var(--gold)}
   border-top:1px solid var(--line); box-shadow:0 -34px 70px -34px rgba(107,75,255,.55);
 }
 .padin{max-width:1120px; margin:0 auto}
+.deck{display:grid; grid-template-columns:1fr auto; gap:14px 28px; align-items:end}
+.keys{display:grid; grid-template-columns:auto auto; gap:8px 14px; align-items:end; padding-bottom:2px}
+.kcross{display:grid; grid-template-columns:repeat(3,32px); grid-template-rows:repeat(2,32px); gap:4px}
+.kcross kbd:nth-child(1){grid-area:1/2}
+.kcross kbd:nth-child(2){grid-area:2/1}
+.kcross kbd:nth-child(3){grid-area:2/2}
+.kcross kbd:nth-child(4){grid-area:2/3}
+.kcap{
+  display:grid; place-items:center; min-width:32px; height:32px; padding:0 8px;
+  font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink);
+  background:#141223; border:1px solid var(--line); border-bottom-width:3px; border-radius:7px;
+}
+.kspace{width:96px}
+.klab{font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); text-align:center; margin-top:6px}
+@media (max-width:760px){ .deck{grid-template-columns:1fr} .keys{display:none} }
 .padhint{
   display:flex; gap:10px; align-items:center; margin:0 0 10px;
   font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
@@ -402,6 +417,7 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
   <div class="pad">
     <div class="padin">
       <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Arrow keys walk him, Space jumps.</p>
+      <div class="deck">
       <div class="padrow">
         <button class="pb c" data-key="1" disabled>Samba<span class="k">1</span></button>
         <button class="pb m" data-key="2" disabled>Hip Hop<span class="k">2</span></button>
@@ -411,6 +427,17 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
         <button class="pb m" data-key="l" disabled>Look<span class="k">L</span></button>
         <button class="pb g" data-key="z" disabled>Zombie<span class="k">Z</span></button>
         <button class="pb v" data-key="f" disabled>Photo<span class="k">F</span></button>
+      </div>
+      <div class="keys" aria-label="Keyboard controls">
+        <div>
+          <div class="kcross"><kbd class="kcap">&uarr;</kbd><kbd class="kcap">&larr;</kbd><kbd class="kcap">&darr;</kbd><kbd class="kcap">&rarr;</kbd></div>
+          <div class="klab">Walk</div>
+        </div>
+        <div>
+          <kbd class="kcap kspace">Space</kbd>
+          <div class="klab">Jump</div>
+        </div>
+      </div>
       </div>
     </div>
   </div>

@@ -750,3 +750,22 @@ filled the viewport and the stage came up short. `padding:0` on the theater.
 from the root of main with a `.nojekyll` file. Every scene change needs Export →
 Viewer → **Update Viewer** in the desktop app; the page's `SCENE_URL` does not
 change, so nothing has to be redeployed for a scene edit.
+
+### Reading positions from run_code without get_scene
+
+`select(filter)` RETURNS an array of handles, and each handle exposes
+`position`/`scale` as `{x, y, z}` objects (not arrays). To read them back when
+the scene digest is truncated, build a string and pass it to a lookup that
+echoes its argument in the error:
+
+    const all = select(o => true);
+    const hits = all.filter(o => /arcade|sign/i.test(o.name)).map(o => o.name + '@' + Math.round(o.position.x));
+    getMaterial('PROBE ' + hits.join(' || '));   // the error message carries the string back
+
+`iterate()` after a failed `select` runs on the PREVIOUS selection, which is
+how a probe kept reporting the arcade cabinet while I thought I was reading the
+jukebox. Read the returned array instead.
+
+`duplicate()` leaves the COPY selected, so `rename`/`position`/`scale` right
+after it act on the new object — but the copy is not visible to `select()`
+until the next run_code call.
