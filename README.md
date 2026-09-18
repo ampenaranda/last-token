@@ -37,9 +37,10 @@ Then open http://localhost:8765.
 
 ## How the page talks to the scene
 
-The scene is published from Spline and loaded with the Spline runtime rather
-than the `<spline-viewer>` element, so the page holds an application object and
-the canvas can be sized and driven directly.
+One runtime instance renders the scene for the whole document, from a
+`position: fixed` full-viewport layer behind everything. The hero is text over a
+live close-up of the robot on his podium; the editorial block scrolls over it;
+the arcade panel after the footer brings the wide diorama back with the controls.
 
 ```js
 const { Application } = await import(
@@ -48,20 +49,47 @@ const { Application } = await import(
 await new Application(document.getElementById("scene")).load(SCENE_URL);
 ```
 
-Every emote already lives inside the scene as a KeyDown event on the robot, and
-each one carries the whole performance: a sound effect, an announcer line, the
-animation clip, and the timed return to idle. So the buttons do not re-implement
-any of that. They press the key.
+**The camera is flown from the page.** The runtime has no camera API — its whole
+public surface is `emitEvent`, `setVariable`, `setZoom`, `setSize`, `play`,
+`stop`, `findObjectBy*` and friends. So instead of switching between authored
+cameras, the scene's camera has its six transform channels bound to scene
+variables, and the page writes numbers:
+
+```js
+splineApp.setVariable("camPY", 1801.4);   // the camera moves, in degrees and units
+```
+
+That buys a curve the page controls rather than a fixed authored transition: the
+camera dollies continuously as the arcade panel scrolls in, and the framing is
+**computed per viewport**. Both shots sit on one ray through the middle of the
+floor, so a narrow frame is handled by pushing the camera further out along that
+same ray — it keeps pointing at the same place and simply takes in more. Without
+it a phone crops the palms off the corners, because the runtime fills its canvas
+rather than letterboxing.
+
+**Rendering is gated on visibility.** The reading block covers the scene
+completely in the middle of the page, so the page calls `splineApp.stop()` there
+and `play()` on the way out. `play()` resumes the clips where they left off
+rather than restarting them, so nothing jumps.
+
+**The drawing buffer is capped.** The runtime calls `setPixelRatio(devicePixelRatio)`
+and clamps nothing, so a full-viewport layer at DPR 3 is roughly four times the
+pixels of the old card. The scene layer renders into a smaller box and is scaled
+back up, holding the effective ratio near 1.5 — measured 4.84 MP down to 3.34 MP
+on a DPR-1.8 laptop.
+
+**The controls press keys.** Every emote lives as a KeyDown event on the robot
+inside the scene, carrying its sound, announcer line, clip and return to idle. The
+buttons dispatch the real key rather than duplicating any of that:
 
 ```js
 document.dispatchEvent(new KeyboardEvent("keydown", { key: "1", code: "Digit1", ... }));
 ```
 
-One dispatch on `document` is enough — the runtime's listener sits above it and
-catches the event as it bubbles. Clicking **Samba** and pressing **1** are
-therefore the same action, down to the audio, and there is only one copy of the
-behaviour to maintain. The earlier approach, invisible hook objects fired with
-`emitEvent("mouseDown", ...)`, played the clip but left the sound behind.
+One dispatch on `document` is enough. Clicking **Samba** and pressing **1** are
+the same action, down to the audio. The walk pads hold their key down for as long
+as the button is held, with pointer capture, so a thumb drives the Game Control
+exactly like the keyboard.
 
 | Button | Key | Button | Key |
 |---|---|---|---|
@@ -70,65 +98,9 @@ behaviour to maintain. The earlier approach, invisible hook objects fired with
 | Cheer | `C` | Zombie | `Z` |
 | Wave | `H` | Photo | `F` |
 
-The buttons stay disabled until the scene finishes loading, and the hint line
-above them says why. Each button wears its key as a small cap in the corner.
-
-Arrow keys walk the robot and Space makes him jump. Those are Spline's own Game
-Control. The pads drawn over the scene — a Space key bottom-left, an arrow cross
-bottom-right — hold the same keys down for as long as they are pressed, so
-mouse and touch drive him the same way (pointer capture keeps the release
-arriving when a finger slides off). Mouse orbit is off (`playControls('none')`)
-and the play camera is detached from the Game Control, so the view never moves.
-Invisible edge walls with positioned physics keep him on the floor.
-
-**Sound.** The runtime plays through WebAudio. The page wraps `AudioContext`
-before the runtime loads, keeps every context it opens, and the Sound buttons
-(one in the deck, one in the top-right of the scene) suspend or resume them all
-at once. The choice is remembered per browser in
-`localStorage`; if storage is unavailable the page simply starts with sound on.
-
-**Layout.** The hero is a two-column grid: title on the left, the scene card
-(16:9) on the right with the deck beneath it. A frame wider than the diorama
-only adds room at the sides, so widescreen is safe; a frame narrower than it
-would crop the palms, because the runtime fills its canvas rather than
-letterboxing. The card's width is capped from the viewport height
-(`max-width: calc((100svh - 330px) * 1.78)`) so the whole hero, deck included,
-fits on the first screen of a laptop. Under 1000px it stacks.
-
-## The page, as a design system
-
-![The hero: title left, the live scene right, the deck beneath it](docs/img/site-hero.jpg)
-
-- **Tokens** live on `:root`: ink `#f3effa`, dim `#8d849f`, faint `#8b83a0`
-  (raised from `#5d556e` so small mono labels clear 4.5:1 on the background),
-  cyan `#3ef0ff`, magenta `#ff3fa6`, gold `#ffd84a`, and the three radii.
-  Bebas Neue for display, Space Grotesk for body, JetBrains Mono for labels.
-- **Section markers** are coin tags — the site's token mark and a mono label —
-  instead of chapter numbers.
-- **The artwork is the backdrop.** Three moodboard images drift behind the
-  lower page in a fixed layer (blurred, screen-blended, ~15 % opacity), fading
-  in after the hero and moving at their own rates as you scroll. Cards carry a
-  `data-depth` and drift too; pointer position tilts the polaroids, pins and
-  process steps in 3D.
-- **Accessibility**: a skip link, visible focus rings on every control, labelled
-  pads and toggles, `alt` on every image, and every motion effect (parallax,
-  tilt, reveals, the ticker, the coin) switches off under
-  `prefers-reduced-motion`.
-
-![The artwork strip and the research board](docs/img/site-artwork.jpg)
-
-## Loading
-
-The poster in the scene card (`img/scene/hero-iso.jpg`) is a capture of the live
-canvas through the play camera — `canvas.toDataURL()` works on the runtime's
-canvas — so it matches the scene exactly and the fade from still to live is
-invisible. Regenerate it after any camera or layout change (see
-`docs/build-notes.md`, "Poster capture").
-
-Spline's own loading options live in Export → Viewer → **Overview** (Loading,
-Loading Preview) and the orbit/pan/zoom, cursor and page-scroll switches in
-**Play Settings**. Orbit, pan and zoom are off there; the page keeps its own
-poster rather than Spline's loading preview so the two never disagree.
+The scene layer is `pointer-events: none`: it is a backdrop, and the deck is the
+only control surface. That also keeps the runtime's touch handler from
+`preventDefault`-ing multi-touch, which would have killed pinch-zoom site-wide.
 
 ## Changing the scene
 

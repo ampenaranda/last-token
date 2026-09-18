@@ -883,3 +883,79 @@ contrast. Skip link, focus rings, reduced-motion switch-offs.
 ![The robot's road, as coin-numbered steps](img/site-robot.jpg)
 ![Build notes and the counters](img/site-notes.jpg)
 ![Phone layout](img/site-mobile.jpg)
+
+
+### Day 9, fifth pass: one scene for the whole page
+
+The ask: hero shows just the robot idling, the scene comes back after the footer
+as a full panel of keys, and the one Spline scene gets reused down the page.
+
+**What the runtime can actually do.** Settled by reading the live object rather
+than guessing — `Object.getOwnPropertyNames(Application.prototype)` in the page:
+
+    addEventListener, controls, data, dispose, emitEvent, emitEventReverse,
+    findObjectById, findObjectByName, getAllObjects, getSplineEvents,
+    getVariable(s), isStopped, load, play, removeEventListener,
+    setBackgroundColor, setGlobalEvents, setSize, setUIWasmUrl,
+    setVariable(s), setZoom, start, stop
+
+**There is no camera method.** So a camera change has to come from inside the
+scene. Two routes: an authored KeyDown carrying a SwitchCamera action (fired by
+dispatching the key, the technique the emotes already use), or binding the
+camera's transform to scene variables and writing them from the page. The second
+won: no second camera, no authored transition, no `runMode: "Once"` trap, and the
+curve belongs to the page, so the framing can be computed per viewport.
+
+    // in the scene, once
+    select(o => o.name === 'Iso Camera');
+    bindVariable('position.x', 'camPX');   // ...and y, z, rotation.x, y, z
+
+    // from the page, per scroll frame
+    splineApp.setVariable('camPY', 1801.4);
+
+Rotation goes in DEGREES, the same units the DSL uses. Verified by flying the
+camera close → mid → wide and watching it in the live viewer.
+
+**`setZoom` is a no-op here** with orbit controls off — worth knowing before
+reaching for it. (The first test looked conclusive for the wrong reason; see
+toDataURL below.)
+
+**`stop()` / `play()` is a safe render gate.** While stopped the pose is frozen;
+`play()` resumes the clip where it left off rather than restarting it, and the
+audio context is untouched. `isStopped` is a boolean property, not a method.
+
+**`getSplineEvents()` lists the event types a scene actually contains** — here
+`start, collision, follow, keyDown`, and notably no `mouseDown` once the old hook
+cubes were deleted. A quick way to confirm what a published scene really carries.
+
+### Three traps that cost time
+
+**`canvas.toDataURL()` returns a stale frame.** Without `preserveDrawingBuffer`
+the read can hand back a previously composited buffer — sometimes an
+un-tonemapped one. It made `setZoom` look dead (four zoom levels, byte-identical
+output) and produced a blown-out poster. Judge the canvas with a real screenshot,
+not a data URL.
+
+**Screenshots of a page with an always-animating fixed canvas go stale too.** The
+compositor only re-rasterises on real input, so programmatic `scrollTo` leaves the
+capture showing the old position in both browsers. Every "the layout is broken"
+scare in this pass was that. Scroll with real wheel or touch events before
+capturing, and check `document.elementFromPoint` when a capture and a measurement
+disagree — the measurement is right.
+
+**A single auto row in a taller grid is placed by `align-content`, not
+`align-items`.** `.arcade { display:grid; min-height:100svh; align-items:end }`
+left the deck pinned to the top of the panel: `align-items` positions the item
+inside its row, and the row itself was still at the top.
+
+### Scripted edits eat their neighbours
+
+Two functions vanished mid-session because a find-and-replace region was larger
+than intended: `capPixels()` was swallowed by a later camera refactor, and the
+entire `.dpad` CSS block went with the theater section it happened to live in —
+the pads rendered unstyled for several rounds without an error anywhere. After any
+scripted edit, grep for the identifiers that should still exist. An adversarial
+review pass over the finished file caught what was left.
+
+![The hero: the robot idling, live, behind the title](img/site-hero-scene.jpg)
+![The arcade panel after the footer](img/site-panel.jpg)
