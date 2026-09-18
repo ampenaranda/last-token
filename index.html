@@ -100,60 +100,120 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
   .sub{max-width:56ch}
 }
 
-/* ---------- theater ---------- */
-/* A <section>, so it must opt out of the global section padding. On short
-   viewports it narrows (keeping 16:9) so the deck stays on the first screen. */
-.theater{
-  position:relative; margin:0; padding:0; display:grid; gap:14px; min-width:0;
-  width:100%; max-width:max(560px, calc((100svh - 330px) * 1.78)); justify-self:end;
+/* ---------- the scene, fixed behind the whole page ----------
+   One runtime instance for the entire document. It is decorative at this
+   layer: pointer-events are off so it never swallows a wheel gesture or a
+   click meant for the page, and the arrow keys reach it through document
+   anyway. The page renders it only while it can actually be seen. */
+.scenefix{
+  position:fixed; top:0; left:0; z-index:0; overflow:hidden; pointer-events:none; background:#06050a;
+  width:calc(100% / var(--dprcap,1)); height:calc(100% / var(--dprcap,1));
+  transform:scale(var(--dprcap,1)); transform-origin:0 0;
 }
-.stage{
-  position:relative; overflow:hidden; aspect-ratio:16/9; background:#06050a;
-  border:1px solid var(--line); border-radius:var(--r-lg);
-  box-shadow:0 40px 120px -30px rgba(107,75,255,.42);
+.scenefix canvas{width:100%; height:100%; display:block; border:0; outline:none}
+
+/* ---------- hero: title over the live scene ---------- */
+.hero{
+  position:relative; z-index:2; min-height:100svh;
+  display:grid; align-content:center; padding:clamp(88px,12vh,140px) 0 clamp(64px,10vh,120px);
 }
-.stage spline-viewer,.stage iframe,.stage canvas{width:100%; height:100%; display:block; border:0; outline:none}
-/* On-screen controls over the scene: jump in the left corner, the walk cross
-   in the right, like a handheld. Each button holds the same key down that
-   the keyboard would, so it drives the Game Control exactly like a keypress,
-   mouse or touch. */
+.hero .herowrap{width:100%}
+.heroin{max-width:min(46ch,46vw)}
+@media (max-width:1000px){ .heroin{max-width:none} }
+/* a readable pocket behind the title, so text never fights the moving scene */
+.hero::before{
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(100deg, var(--bg) 0, rgba(8,7,12,.92) 26%, rgba(8,7,12,.55) 46%, transparent 68%);
+}
+@media (max-width:1000px){
+  .hero::before{background:linear-gradient(to bottom, var(--bg) 0, rgba(8,7,12,.92) 30%, rgba(8,7,12,.86) 72%, rgba(8,7,12,.5) 100%)}
+}
+.cue{
+  display:inline-flex; align-items:center; gap:10px; margin:34px 0 0;
+  font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint);
+}
+.cue .arr{
+  width:22px; height:22px; display:grid; place-items:center; border:1px solid var(--line);
+  border-radius:50%; color:var(--cyan); animation:nudge 2.6s ease-in-out infinite;
+}
+@keyframes nudge{0%,72%,100%{transform:translateY(0)}84%{transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){ .cue .arr{animation:none} }
+
+/* ---------- the reading block slides over the scene ---------- */
+.reading{
+  position:relative; z-index:2;
+  background:linear-gradient(to bottom, rgba(8,7,12,.55) 0, rgba(8,7,12,.93) 130px, var(--bg) 330px);
+}
+.reading .wrap{position:relative; z-index:1}
+
+/* ---------- the arcade panel: the scene comes back, with the controls ---------- */
+.arcade{
+  position:relative; z-index:2; min-height:100svh;
+  display:grid; align-content:end; padding:0 0 clamp(18px,3vh,34px);
+}
+.arcade::before{
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(to bottom, var(--bg) 0, rgba(8,7,12,.55) 12%, transparent 34%, rgba(8,7,12,.72) 78%, rgba(8,7,12,.92) 100%);
+}
+.arcade .panel{position:relative; width:100%; max-width:1180px; margin:0 auto; padding:0 var(--gut)}
+.arcade .plabel{
+  display:flex; align-items:center; gap:12px; margin:0 0 18px;
+  font-family:var(--display); font-size:clamp(26px,3.4vw,40px); letter-spacing:.06em; text-transform:uppercase; color:var(--ink);
+}
+.arcade .plabel .coin{width:26px; height:26px; flex:none}
+
+/* ---------- on-screen controls, floating over the scene above the deck ----------
+   Each key is held down for as long as the button is pressed, which is what the
+   scene's Game Control listens for, so a mouse or a thumb walks the robot the
+   same way the keyboard does. */
 .dpad{
-  position:absolute; bottom:16px; z-index:3; display:flex; align-items:flex-end; gap:12px;
-  padding:10px; border-radius:16px; background:rgba(8,7,12,.58); border:1px solid var(--line);
+  position:absolute; z-index:3; bottom:calc(100% + 26px); display:flex; align-items:flex-end; gap:12px;
+  padding:10px; border-radius:16px; background:rgba(8,7,12,.6); border:1px solid var(--line);
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   opacity:0; transition:opacity .5s ease; pointer-events:none;
 }
 .dpad.on{opacity:1; pointer-events:auto}
-.dpad.jumppad{left:16px}
-.dpad.walkpad{right:16px}
+.dpad.jumppad{left:var(--gut); flex-direction:column; align-items:center; gap:7px}
+.dpad.walkpad{right:var(--gut)}
+.jumppad i{
+  font-style:normal; font-family:var(--mono); font-size:9.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint);
+}
 .dcross{display:grid; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(2,44px); gap:4px}
 .dk{
-  display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid rgba(243,239,250,.16);
-  border-bottom-width:3px; border-radius:11px; background:#1a1730; color:var(--ink); cursor:pointer;
-  font-family:var(--mono); font-size:16px; line-height:1; user-select:none; -webkit-user-select:none; touch-action:none;
+  display:grid; place-items:center; width:44px; height:44px; padding:0;
+  border:1px solid rgba(243,239,250,.16); border-bottom-width:3px; border-radius:11px;
+  background:#1a1730; color:var(--ink); cursor:pointer; font-family:var(--mono); font-size:16px;
+  line-height:1; user-select:none; -webkit-user-select:none; touch-action:none;
   transition:transform .06s ease, background .12s ease;
 }
 .dk:hover{background:#242042}
 .dk.held,.dk:active{transform:translateY(2px); border-bottom-width:1px; background:var(--cyan); color:#0b0912}
 .dk.up{grid-area:1/2} .dk.left{grid-area:2/1} .dk.down{grid-area:2/2} .dk.right{grid-area:2/3}
 .dk.jump{
-  width:140px; height:44px; border-radius:11px;
-  font-family:var(--mono); font-size:12px; letter-spacing:.16em; background:#2a1a3a; border-color:rgba(255,63,166,.35);
+  width:140px; height:44px; border-radius:11px; font-size:12px; letter-spacing:.16em;
+  background:#2a1a3a; border-color:rgba(255,63,166,.35);
 }
-.jumppad{flex-direction:column; align-items:center; gap:6px}
-.jumppad i{font-style:normal; font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
 .dk.jump.held,.dk.jump:active{background:var(--mag); color:#0b0912}
 .mute.inscene{
-  position:absolute; top:14px; right:14px; z-index:3; padding:7px 9px;
-  background:rgba(8,7,12,.58); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  position:absolute; z-index:3; bottom:calc(100% + 152px); right:var(--gut); padding:7px 9px;
+  background:rgba(8,7,12,.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   opacity:0; transition:opacity .5s ease, border-color .18s ease; pointer-events:none;
 }
 .mute.inscene.on{opacity:1; pointer-events:auto}
 .mute.inscene i{display:none}
-@media (max-width:620px){ .dcross{grid-template-columns:repeat(3,38px); grid-template-rows:repeat(2,38px)} .dk{width:38px; height:38px; font-size:14px} .dk.jump{width:110px; height:38px; font-size:11px} .dpad{bottom:10px} .dpad.jumppad{left:10px} .dpad.walkpad{right:10px} }
+@media (max-width:620px){
+  .dcross{grid-template-columns:repeat(3,38px); grid-template-rows:repeat(2,38px)}
+  .dk{width:38px; height:38px; font-size:14px}
+  .dk.jump{width:112px; height:38px; font-size:11px}
+  .dpad{bottom:calc(100% + 18px); padding:8px}
+  /* the deck already carries a sound toggle at this width; two is clutter */
+  .mute.inscene{display:none}
+}
 
 /* ---------- control deck ---------- */
 .pad{padding:0}
+.arcade .pad{padding:0}
 .padtop{display:flex; flex-wrap:wrap; align-items:center; gap:10px 20px; margin:0 0 12px}
 .padhint{
   display:flex; gap:10px; align-items:center; margin:0; flex:1 1 220px;
@@ -205,9 +265,9 @@ h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
 .pb.g{--pbc:#ffd84a; --pbs:#a3860f}
 .pb.v{--pbc:#9d78ff; --pbs:#553099}
 @media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{font-size:12px; top:4px; right:5px; min-width:22px; padding:2px 5px 1px} .padrow{gap:8px} }
-.stage .placeholder{position:absolute; inset:0; background:#06050a}
-.stage .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
-.stage .posterUI{
+.scenefix .placeholder{position:absolute; inset:0; background:#06050a; z-index:4}
+.scenefix .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
+.scenefix .posterUI{
   position:absolute; inset:auto 0 0 0; padding:80px 26px 30px; text-align:center;
   display:grid; gap:10px; justify-items:center;
   background:linear-gradient(to top, rgba(6,5,10,.95) 14%, transparent);
@@ -261,7 +321,7 @@ h2 .accent{color:var(--cyan)}
 }
 
 /* ---------- artwork as a drifting backdrop ---------- */
-.bgfx{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; opacity:var(--bgo,0); transition:opacity .5s ease}
+.bgfx{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; opacity:var(--bgo,0); transition:opacity .5s ease}
 .bgfx img{
   position:absolute; width:min(62vw,940px); aspect-ratio:3/2; object-fit:cover; border-radius:28px;
   filter:blur(9px) saturate(1.25); mix-blend-mode:screen; opacity:.17; will-change:transform;
@@ -410,8 +470,20 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 </style>
 </head>
 <body>
-<a class="skip" href="#strip">Skip to the artwork</a>
+<a class="skip" href="#play">Skip to the controls</a>
 <div id="prog"></div>
+<div class="scenefix">
+  <!-- Live WebGL scene. The published scene URL lives in SCENE_URL at the bottom of this file. -->
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="placeholder" id="ph">
+    <img class="poster" src="img/scene/hero-iso.jpg" alt="" decoding="async" fetchpriority="high">
+    <div class="posterUI">
+      <div class="big">Insert coin</div>
+      <p>Warming up the cabinet. The live scene drops in here in a moment.</p>
+    </div>
+  </div>
+</div>
+
 <div class="bgfx" aria-hidden="true">
   <img class="b1" src="img/ideas/level-ref-01-neon-floor.jpg" alt="" data-depth="0.10">
   <img class="b2" src="img/ideas/level-ref-04-hud-arcade.jpg" alt="" data-depth="0.18">
@@ -438,79 +510,29 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
       <a href="#ideas">Ideas</a>
       <a href="#robot">Robot</a>
       <a href="#made">Made</a>
+      <a href="#play">Play</a>
     </nav>
   </div>
 </div>
 
-<div class="herowrap">
 <section class="hero">
-  <header>
+  <div class="herowrap">
+  <header class="heroin">
     <p class="kicker">A WebGL study in animation, controls and interaction</p>
     <h1>Last<br><em>Token</em></h1>
-    <p class="sub">An isometric arcade that closed decades ago, still running on its final credit. Walk the robot around with the arrow keys, dance on the floor tiles, and get your picture taken at the booth. Every prop, sticker, sound and voice line in here was <b>generated and wired by hand</b>.</p>
+    <p class="sub">An isometric arcade that closed decades ago, still running on its final credit. Behind this text the robot is idling on his podium, live. Scroll to the end and the camera pulls back over the whole floor, where you can make him dance. Every prop, sticker, sound and voice line in here was <b>generated and wired by hand</b>.</p>
     <div class="meta">
       <span><b>Real time</b> WebGL</span>
       <span><b>242</b> objects</span>
       <span><b>120</b> BPM</span>
       <span><b>2026</b></span>
     </div>
+    <p class="cue"><span class="arr" aria-hidden="true">&darr;</span> Scroll &mdash; the camera pulls back</p>
   </header>
-
-<section class="theater rv">
-  <div class="stage">
-    <!-- Live WebGL scene. The published scene URL lives in SCENE_URL at the bottom of this file. -->
-    <canvas id="scene" tabindex="0" aria-label="The Last Token arcade, running live"></canvas>
-    <div class="dpad jumppad" aria-label="Jump">
-      <button class="dk jump" data-key=" " aria-label="Jump">SPACE</button><i>Jump</i>
-    </div>
-    <div class="dpad walkpad" aria-label="Walk pad">
-      <div class="dcross">
-        <button class="dk up" data-key="ArrowUp" aria-label="Walk up">&uarr;</button>
-        <button class="dk left" data-key="ArrowLeft" aria-label="Walk left">&larr;</button>
-        <button class="dk down" data-key="ArrowDown" aria-label="Walk down">&darr;</button>
-        <button class="dk right" data-key="ArrowRight" aria-label="Walk right">&rarr;</button>
-      </div>
-    </div>
-    <button class="mute inscene" type="button" aria-pressed="false" title="Turn the sound off" aria-label="Sound">
-      <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
-      <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
-      <i>Sound on</i>
-    </button>
-    <div class="placeholder" id="ph">
-      <img class="poster" src="img/scene/hero-iso.jpg" alt="The Last Token arcade, seen from above">
-      <div class="posterUI">
-        <div class="big">Insert coin</div>
-        <p>Warming up the cabinet. The live scene drops in here in a moment.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="pad">
-    <div class="padtop">
-      <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Walk him with the pad or the arrow keys.</p>
-      <div class="legend">
-        <button class="mute" id="mute" type="button" aria-pressed="false" title="Turn the sound off">
-          <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
-          <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
-          <i>Sound on</i>
-        </button>
-      </div>
-    </div>
-    <div class="padrow">
-      <button class="pb c" data-key="1" disabled>Samba<span class="k">1</span></button>
-      <button class="pb m" data-key="2" disabled>Hip Hop<span class="k">2</span></button>
-      <button class="pb g" data-key="c" disabled>Cheer<span class="k">C</span></button>
-      <button class="pb v" data-key="h" disabled>Wave<span class="k">H</span></button>
-      <button class="pb c" data-key="t" disabled>Thumbs<span class="k">T</span></button>
-      <button class="pb m" data-key="l" disabled>Look<span class="k">L</span></button>
-      <button class="pb g" data-key="z" disabled>Zombie<span class="k">Z</span></button>
-      <button class="pb v" data-key="f" disabled>Photo<span class="k">F</span></button>
-    </div>
   </div>
 </section>
-</section>
-</div><!-- /herowrap -->
 
+<div class="reading">
 <div class="wrap">
 
   <div class="ticker" aria-hidden="true">
@@ -527,14 +549,14 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
       <p class="lead">Marquees and props, generated for the level and cut by hand. The three signs are mounted on posts in the scene; the props were reconstructed into 3D and placed on the floor.</p>
     </div>
     <div class="strip rv">
-      <figure class="pola" data-depth="0.05" style="--r:-2.4deg"><img src="img/marquee-galaxy-drift.png" alt="Galaxy Drift marquee"><figcaption class="cap">Galaxy Drift<small>north sign</small></figcaption></figure>
-      <figure class="pola" data-depth="-0.04" style="--r:1.8deg"><img src="img/marquee-token-rush.png" alt="Token Rush marquee"><figcaption class="cap">Token Rush<small>east sign</small></figcaption></figure>
-      <figure class="pola" data-depth="0.06" style="--r:-1.2deg"><img src="img/marquee-disco-panic.png" alt="Disco Panic marquee"><figcaption class="cap">Disco Panic<small>west sign</small></figcaption></figure>
-      <figure class="pola" data-depth="-0.05" style="--r:2.6deg"><img src="img/arcade-screen-512.png" alt="Pixel art arcade screen"><figcaption class="cap">Attract mode<small>cabinet screen</small></figcaption></figure>
-      <figure class="pola" data-depth="0.04" style="--r:-2deg"><img src="img/speaker-tower-01.jpg" alt="Speaker tower reference"><figcaption class="cap">Speaker tower<small>prop reference</small></figcaption></figure>
-      <figure class="pola" data-depth="-0.06" style="--r:1.4deg"><img src="img/photo-booth-01.jpg" alt="Photo booth reference"><figcaption class="cap">Photo booth<small>prop reference</small></figcaption></figure>
-      <figure class="pola" data-depth="0.05" style="--r:-1.6deg"><img src="img/neon-palm-01.jpg" alt="Neon palm reference"><figcaption class="cap">Neon palm<small>prop reference</small></figcaption></figure>
-      <figure class="pola" data-depth="-0.04" style="--r:2.2deg"><img src="img/arcade-cabinet-01.jpg" alt="Arcade cabinet reference"><figcaption class="cap">Cabinet<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="0.05" style="--r:-2.4deg"><img loading="lazy" decoding="async" src="img/marquee-galaxy-drift.png" alt="Galaxy Drift marquee"><figcaption class="cap">Galaxy Drift<small>north sign</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.04" style="--r:1.8deg"><img loading="lazy" decoding="async" src="img/marquee-token-rush.png" alt="Token Rush marquee"><figcaption class="cap">Token Rush<small>east sign</small></figcaption></figure>
+      <figure class="pola" data-depth="0.06" style="--r:-1.2deg"><img loading="lazy" decoding="async" src="img/marquee-disco-panic.png" alt="Disco Panic marquee"><figcaption class="cap">Disco Panic<small>west sign</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.05" style="--r:2.6deg"><img loading="lazy" decoding="async" src="img/arcade-screen-512.png" alt="Pixel art arcade screen"><figcaption class="cap">Attract mode<small>cabinet screen</small></figcaption></figure>
+      <figure class="pola" data-depth="0.04" style="--r:-2deg"><img loading="lazy" decoding="async" src="img/speaker-tower-01.jpg" alt="Speaker tower reference"><figcaption class="cap">Speaker tower<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.06" style="--r:1.4deg"><img loading="lazy" decoding="async" src="img/photo-booth-01.jpg" alt="Photo booth reference"><figcaption class="cap">Photo booth<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="0.05" style="--r:-1.6deg"><img loading="lazy" decoding="async" src="img/neon-palm-01.jpg" alt="Neon palm reference"><figcaption class="cap">Neon palm<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.04" style="--r:2.2deg"><img loading="lazy" decoding="async" src="img/arcade-cabinet-01.jpg" alt="Arcade cabinet reference"><figcaption class="cap">Cabinet<small>prop reference</small></figcaption></figure>
     </div>
   </section>
 
@@ -545,12 +567,12 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
       <p class="lead">Before anything was modelled, the level was argued out in pictures: how high the neon sits, where the checkerboard stops, what a station looks like from above. Most of these never made it in whole, but they set the palette and the rules.</p>
     </div>
     <div class="board rv">
-      <figure class="pin" data-depth="-0.05"><img src="img/ideas/level-ref-01-neon-floor.jpg" alt="Neon floor concept"><figcaption><b>Neon floor</b><span>The grid, the glow line, the black around it</span></figcaption></figure>
-      <figure class="pin" data-depth="0.04"><img src="img/ideas/station-dance-floor.jpg" alt="Dance floor station concept"><figcaption><b>Dance station</b><span>Lit tiles as a place you stand, not decoration</span></figcaption></figure>
-      <figure class="pin" data-depth="-0.06"><img src="img/ideas/level-ref-02-checker-boombox.jpg" alt="Checker and boombox concept"><figcaption><b>Checker &amp; radio</b><span>Where the black-and-white belongs</span></figcaption></figure>
-      <figure class="pin" data-depth="0.05"><img src="img/ideas/level-ref-04-hud-arcade.jpg" alt="HUD and arcade concept"><figcaption><b>HUD &amp; cabinets</b><span>What the screen furniture should feel like</span></figcaption></figure>
-      <figure class="pin" data-depth="-0.04"><img src="img/ideas/level-ref-03-8bit-zone.jpg" alt="8-bit zone concept"><figcaption><b>8-bit zone</b><span>The pixel language for the cabinet screen</span></figcaption></figure>
-      <figure class="pin" data-depth="0.05"><img src="img/ideas/marquee-sheet-01.jpg" alt="Marquee sticker sheet"><figcaption><b>Marquee sheet</b><span>Six signs generated together, then cut out by hand</span></figcaption></figure>
+      <figure class="pin" data-depth="-0.05"><img loading="lazy" decoding="async" src="img/ideas/level-ref-01-neon-floor.jpg" alt="Neon floor concept"><figcaption><b>Neon floor</b><span>The grid, the glow line, the black around it</span></figcaption></figure>
+      <figure class="pin" data-depth="0.04"><img loading="lazy" decoding="async" src="img/ideas/station-dance-floor.jpg" alt="Dance floor station concept"><figcaption><b>Dance station</b><span>Lit tiles as a place you stand, not decoration</span></figcaption></figure>
+      <figure class="pin" data-depth="-0.06"><img loading="lazy" decoding="async" src="img/ideas/level-ref-02-checker-boombox.jpg" alt="Checker and boombox concept"><figcaption><b>Checker &amp; radio</b><span>Where the black-and-white belongs</span></figcaption></figure>
+      <figure class="pin" data-depth="0.05"><img loading="lazy" decoding="async" src="img/ideas/level-ref-04-hud-arcade.jpg" alt="HUD and arcade concept"><figcaption><b>HUD &amp; cabinets</b><span>What the screen furniture should feel like</span></figcaption></figure>
+      <figure class="pin" data-depth="-0.04"><img loading="lazy" decoding="async" src="img/ideas/level-ref-03-8bit-zone.jpg" alt="8-bit zone concept"><figcaption><b>8-bit zone</b><span>The pixel language for the cabinet screen</span></figcaption></figure>
+      <figure class="pin" data-depth="0.05"><img loading="lazy" decoding="async" src="img/ideas/marquee-sheet-01.jpg" alt="Marquee sticker sheet"><figcaption><b>Marquee sheet</b><span>Six signs generated together, then cut out by hand</span></figcaption></figure>
     </div>
   </section>
 
@@ -561,11 +583,11 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
       <p class="lead">The hero took the longest road: drawn, reconstructed into geometry, rigged, then rebuilt again in Blender when every clip turned out to float a few units above the floor.</p>
     </div>
     <div class="steps rv">
-      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>1</span><img src="img/process/robot-hero.jpg" alt="Robot concept render"><figcaption class="txt"><b>Concept</b><span>The character, before it had any geometry</span></figcaption></figure>
-      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>2</span><img src="img/process/robot-turnaround.jpg" alt="Robot turnaround views"><figcaption class="txt"><b>Turnaround</b><span>Views generated so it could be reconstructed</span></figcaption></figure>
-      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>3</span><img src="img/process/robot-tripo-texture-latest.jpg" alt="Reconstructed robot with baked texture"><figcaption class="txt"><b>Reconstructed</b><span>Image to 3D, chrome and cream baked in</span></figcaption></figure>
-      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>4</span><img src="img/process/robot-mixamo-rigged.jpg" alt="Robot auto-rigged"><figcaption class="txt"><b>Rigged</b><span>Auto-rigged so it could take motion clips</span></figcaption></figure>
-      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>5</span><img src="img/process/robot-mixamo-anims-pack.jpg" alt="Animation clip pack"><figcaption class="txt"><b>Clip pack</b><span>Eleven clips, merged into one file in Blender</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>1</span><img loading="lazy" decoding="async" src="img/process/robot-hero.jpg" alt="Robot concept render"><figcaption class="txt"><b>Concept</b><span>The character, before it had any geometry</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>2</span><img loading="lazy" decoding="async" src="img/process/robot-turnaround.jpg" alt="Robot turnaround views"><figcaption class="txt"><b>Turnaround</b><span>Views generated so it could be reconstructed</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>3</span><img loading="lazy" decoding="async" src="img/process/robot-tripo-texture-latest.jpg" alt="Reconstructed robot with baked texture"><figcaption class="txt"><b>Reconstructed</b><span>Image to 3D, chrome and cream baked in</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>4</span><img loading="lazy" decoding="async" src="img/process/robot-mixamo-rigged.jpg" alt="Robot auto-rigged"><figcaption class="txt"><b>Rigged</b><span>Auto-rigged so it could take motion clips</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>5</span><img loading="lazy" decoding="async" src="img/process/robot-mixamo-anims-pack.jpg" alt="Animation clip pack"><figcaption class="txt"><b>Clip pack</b><span>Eleven clips, merged into one file in Blender</span></figcaption></figure>
     </div>
   </section>
 
@@ -626,6 +648,52 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
     <p class="colophon"><b>Last Token</b>. A real-time WebGL scene, built and driven entirely through code. Animation from Mixamo by way of Blender, props reconstructed with Tripo, marquees and pixel art generated, every sound synthesized or spoken by TTS. Insert coin.</p>
   </footer>
 </div>
+</div><!-- /reading -->
+
+<section class="arcade" id="play">
+  <div class="panel">
+    <div class="dpad jumppad" aria-label="Jump">
+      <button class="dk jump" data-key=" " aria-label="Jump">SPACE</button><i>Jump</i>
+    </div>
+    <div class="dpad walkpad" aria-label="Walk pad">
+      <div class="dcross">
+        <button class="dk up" data-key="ArrowUp" aria-label="Walk up">&uarr;</button>
+        <button class="dk left" data-key="ArrowLeft" aria-label="Walk left">&larr;</button>
+        <button class="dk down" data-key="ArrowDown" aria-label="Walk down">&darr;</button>
+        <button class="dk right" data-key="ArrowRight" aria-label="Walk right">&rarr;</button>
+      </div>
+    </div>
+    <button class="mute inscene" type="button" aria-pressed="false" title="Turn the sound off" aria-label="Sound">
+      <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
+      <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
+      <i>Sound on</i>
+    </button>
+
+    <h2 class="plabel"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>Your turn</h2>
+    <div class="pad">
+      <div class="padtop">
+        <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Walk him with the pad or the arrow keys.</p>
+        <div class="legend">
+          <button class="mute" id="mute" type="button" aria-pressed="false" title="Turn the sound off">
+            <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
+            <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
+            <i>Sound on</i>
+          </button>
+        </div>
+      </div>
+      <div class="padrow">
+        <button class="pb c" data-key="1" disabled>Samba<span class="k">1</span></button>
+        <button class="pb m" data-key="2" disabled>Hip Hop<span class="k">2</span></button>
+        <button class="pb g" data-key="c" disabled>Cheer<span class="k">C</span></button>
+        <button class="pb v" data-key="h" disabled>Wave<span class="k">H</span></button>
+        <button class="pb c" data-key="t" disabled>Thumbs<span class="k">T</span></button>
+        <button class="pb m" data-key="l" disabled>Look<span class="k">L</span></button>
+        <button class="pb g" data-key="z" disabled>Zombie<span class="k">Z</span></button>
+        <button class="pb v" data-key="f" disabled>Photo<span class="k">F</span></button>
+      </div>
+    </div>
+  </div>
+</section>
 
 <script>
 /* ---------------------------------------------------------------
@@ -703,7 +771,6 @@ function pressKey(key) {
 
 document.querySelectorAll(".pb").forEach((b) => {
   b.addEventListener("click", () => {
-    canvas.focus();
     pressKey(b.dataset.key);
   });
 });
@@ -764,6 +831,7 @@ window.addEventListener("blur", () => {
     const app = new Application(canvas);
     await app.load(url);
     splineApp = app;
+    window.lastToken.app = app;
 
     const ph = document.getElementById("ph");
     if (ph) {
@@ -773,12 +841,90 @@ window.addEventListener("blur", () => {
     }
     document.querySelectorAll(".pb").forEach((b) => { b.disabled = false; });
     document.querySelectorAll(".dpad, .mute.inscene").forEach((d) => d.classList.add("on"));
+    measureScene();
+    driveScene();
   } catch (err) {
     console.warn("Last Token: the live scene did not load, keeping the poster.", err);
     padhint.innerHTML =
       '<span class="dot"></span> The live scene did not load, so the buttons are off. This is a still.';
   }
 })();
+
+/* ---- the camera flies on the scroll ----
+   The scene's camera has its six transform channels bound to scene variables,
+   so the page places it by writing numbers — no second camera, no authored
+   transition, and the curve is ours. CLOSE frames the robot on his podium for
+   the hero; WIDE stands back over the whole floor for the panel at the end. */
+const CAM_CLOSE = { camPX: 749.853, camPY: 611.189, camPZ: 959.768, camRX: -16.3293, camRY: 36.8615, camRZ: 9.968 };
+const CAM_WIDE  = { camPX: 3463.544, camPY: 2991.597, camPZ: 3463.544, camRX: -45.7767, camRY: 34.8941, camRZ: 30.4464 };
+const CAM_KEYS = Object.keys(CAM_CLOSE);
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+/* Both framings sit on a ray through the middle of the floor, so a frame that
+   is narrower than the diorama is handled by pushing the camera further out
+   along that same ray — it keeps pointing at the same place, it just takes in
+   more. The runtime FILLS its canvas rather than letterboxing, so without this
+   a phone would crop the palms off the corners and, up close, the robot's head.
+   The close shot needs more of this than the wide one: a portrait frame suits a
+   tall subject, and pushing the wide shot too far just makes the floor tiny. */
+/* The runtime sizes its drawing buffer from the canvas box times
+   devicePixelRatio and clamps nothing, so a full-viewport layer on a DPR-3
+   phone is roughly four times the pixels of the old card. Rendering into a
+   smaller box and scaling the layer back up caps the effective ratio near 1.5,
+   which still reads sharp and costs less than half the fill. */
+function capPixels() {
+  const dpr = window.devicePixelRatio || 1;
+  const cap = dpr > 1.5 ? Math.round((dpr / 1.5) * 1000) / 1000 : 1;
+  document.documentElement.style.setProperty("--dprcap", String(cap));
+}
+capPixels();
+
+const PIVOT = { camPX: 0, camPY: 300, camPZ: 0 };
+function zoomFor(aspect, k, limit) {
+  return Math.min(limit, Math.max(1, 1 + (1.5 - aspect) * k));
+}
+
+let camT = -1, sceneLit = null, arcTop = 0, heroBottom = 0, vh = 0;
+function measureScene() {
+  const panel = document.getElementById("play");
+  const heroEl = document.querySelector(".hero");
+  arcTop = panel.offsetTop;
+  heroBottom = heroEl.offsetTop + heroEl.offsetHeight;
+  vh = innerHeight;
+}
+function driveScene() {
+  if (!splineApp) return;
+  if (!arcTop) measureScene();
+
+  let t = (scrollY + vh - arcTop) / (vh * 0.85);
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const e = reduceMotion.matches
+    ? (t > 0.5 ? 1 : 0)
+    : (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  if (Math.abs(e - camT) > 0.0015) {
+    camT = e;
+    const aspect = innerWidth / Math.max(1, innerHeight);
+    const zoom = zoomFor(aspect, 0.52, 1.5) + (zoomFor(aspect, 0.34, 1.36) - zoomFor(aspect, 0.52, 1.5)) * e;
+    for (const k of CAM_KEYS) {
+      const v = CAM_CLOSE[k] + (CAM_WIDE[k] - CAM_CLOSE[k]) * e;
+      const pivot = PIVOT[k];
+      splineApp.setVariable(k, pivot === undefined ? v : pivot + (v - pivot) * zoom);
+    }
+  }
+
+  /* Render only while the scene can actually be seen. The reading block covers
+     it completely in the middle of the page, and a paused canvas costs nothing:
+     play() resumes the clips where they left off rather than restarting them. */
+  const lit = scrollY < heroBottom || scrollY + vh > arcTop;
+  if (lit !== sceneLit) {
+    sceneLit = lit;
+    if (lit) { if (splineApp.isStopped) splineApp.play(); }
+    else if (!splineApp.isStopped) splineApp.stop();
+  }
+}
+addEventListener("scroll", driveScene, { passive: true });
+addEventListener("resize", () => { capPixels(); measureScene(); driveScene(); });
+addEventListener("load", () => { measureScene(); driveScene(); });
 
 /* Parallax and card tilt. One scroll handler drives the backdrop's fade-in and
    drift and the depth of every [data-depth] element; pointer position tilts
@@ -794,7 +940,10 @@ window.addEventListener("blur", () => {
     queued = false;
     const y = scrollY, vh = innerHeight;
     const heroEnd = hero.offsetTop + hero.offsetHeight;
-    root.style.setProperty("--bgo", Math.min(1, Math.max(0, (y - heroEnd + vh * 0.85) / (vh * 0.6))).toFixed(3));
+    const panelTop = document.getElementById("play").offsetTop;
+    const fadeIn = Math.min(1, Math.max(0, (y - heroEnd + vh * 0.85) / (vh * 0.6)));
+    const fadeOut = Math.min(1, Math.max(0, (panelTop - (y + vh)) / (vh * 0.5)));
+    root.style.setProperty("--bgo", (fadeIn * fadeOut).toFixed(3));
     bg.forEach((el) => { el.style.setProperty("--py", (-y * parseFloat(el.dataset.depth)).toFixed(1) + "px"); });
     cards.forEach((el) => {
       const r = el.getBoundingClientRect();
