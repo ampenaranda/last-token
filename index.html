@@ -72,7 +72,7 @@ body::after{
 /* ---------- hero: title left, scene right, deck under the scene ---------- */
 .herowrap{max-width:1880px; margin:0 auto; padding:0 var(--gut)}
 .hero{
-  display:grid; grid-template-columns:minmax(280px,1fr) minmax(0,1.7fr);
+  display:grid; grid-template-columns:minmax(300px,1fr) minmax(0,2.1fr);
   gap:clamp(28px,4vw,72px); align-items:center; padding:clamp(36px,5vw,64px) 0 0;
 }
 header{padding:0}
@@ -102,17 +102,55 @@ h1 em{font-style:normal; color:var(--gold)}
 
 /* ---------- theater ---------- */
 /* A <section>, so it must opt out of the global section padding. On short
-   viewports it narrows (keeping 7:5) so the deck stays on the first screen. */
+   viewports it narrows (keeping 16:9) so the deck stays on the first screen. */
 .theater{
   position:relative; margin:0; padding:0; display:grid; gap:14px; min-width:0;
-  width:100%; max-width:max(520px, calc((100svh - 330px) * 1.4)); justify-self:end;
+  width:100%; max-width:max(560px, calc((100svh - 330px) * 1.78)); justify-self:end;
 }
 .stage{
-  position:relative; overflow:hidden; aspect-ratio:7/5; background:#06050a;
+  position:relative; overflow:hidden; aspect-ratio:16/9; background:#06050a;
   border:1px solid var(--line); border-radius:var(--r-lg);
   box-shadow:0 40px 120px -30px rgba(107,75,255,.42);
 }
 .stage spline-viewer,.stage iframe,.stage canvas{width:100%; height:100%; display:block; border:0; outline:none}
+/* On-screen controls over the scene: jump in the left corner, the walk cross
+   in the right, like a handheld. Each button holds the same key down that
+   the keyboard would, so it drives the Game Control exactly like a keypress,
+   mouse or touch. */
+.dpad{
+  position:absolute; bottom:16px; z-index:3; display:flex; align-items:flex-end; gap:12px;
+  padding:10px; border-radius:16px; background:rgba(8,7,12,.58); border:1px solid var(--line);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  opacity:0; transition:opacity .5s ease; pointer-events:none;
+}
+.dpad.on{opacity:1; pointer-events:auto}
+.dpad.jumppad{left:16px}
+.dpad.walkpad{right:16px}
+.dcross{display:grid; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(2,44px); gap:4px}
+.dk{
+  display:grid; place-items:center; width:44px; height:44px; padding:0; border:1px solid rgba(243,239,250,.16);
+  border-bottom-width:3px; border-radius:11px; background:#1a1730; color:var(--ink); cursor:pointer;
+  font-family:var(--mono); font-size:16px; line-height:1; user-select:none; -webkit-user-select:none; touch-action:none;
+  transition:transform .06s ease, background .12s ease;
+}
+.dk:hover{background:#242042}
+.dk.held,.dk:active{transform:translateY(2px); border-bottom-width:1px; background:var(--cyan); color:#0b0912}
+.dk.up{grid-area:1/2} .dk.left{grid-area:2/1} .dk.down{grid-area:2/2} .dk.right{grid-area:2/3}
+.dk.jump{
+  width:140px; height:44px; border-radius:11px;
+  font-family:var(--mono); font-size:12px; letter-spacing:.16em; background:#2a1a3a; border-color:rgba(255,63,166,.35);
+}
+.jumppad{flex-direction:column; align-items:center; gap:6px}
+.jumppad i{font-style:normal; font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
+.dk.jump.held,.dk.jump:active{background:var(--mag); color:#0b0912}
+.mute.inscene{
+  position:absolute; top:14px; right:14px; z-index:3; padding:7px 9px;
+  background:rgba(8,7,12,.58); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  opacity:0; transition:opacity .5s ease, border-color .18s ease; pointer-events:none;
+}
+.mute.inscene.on{opacity:1; pointer-events:auto}
+.mute.inscene i{display:none}
+@media (max-width:620px){ .dcross{grid-template-columns:repeat(3,38px); grid-template-rows:repeat(2,38px)} .dk{width:38px; height:38px; font-size:14px} .dk.jump{width:110px; height:38px; font-size:11px} .dpad{bottom:10px} .dpad.jumppad{left:10px} .dpad.walkpad{right:10px} }
 
 /* ---------- control deck ---------- */
 .pad{padding:0}
@@ -125,17 +163,11 @@ h1 em{font-style:normal; color:var(--gold)}
 .legend{display:flex; align-items:center; gap:16px; margin-left:auto}
 .lg{display:flex; align-items:center; gap:8px}
 .lg i,.mute i{font-style:normal; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint)}
-.kcross{display:grid; grid-template-columns:repeat(3,26px); grid-template-rows:repeat(2,26px); gap:3px}
-.kcross kbd:nth-child(1){grid-area:1/2}
-.kcross kbd:nth-child(2){grid-area:2/1}
-.kcross kbd:nth-child(3){grid-area:2/2}
-.kcross kbd:nth-child(4){grid-area:2/3}
 .kcap{
   display:grid; place-items:center; min-width:26px; height:26px; padding:0 6px;
   font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--ink);
   background:#141223; border:1px solid var(--line); border-bottom-width:3px; border-radius:6px;
 }
-.kspace{width:70px}
 .mute{
   display:flex; align-items:center; gap:8px; padding:6px 10px 6px 8px;
   background:#141223; border:1px solid var(--line); border-radius:999px; cursor:pointer; color:var(--ink);
@@ -157,8 +189,8 @@ h1 em{font-style:normal; color:var(--gold)}
 }
 /* the key that does the same thing, worn like a keycap on the button */
 .pb .k{
-  position:absolute; top:6px; right:7px; min-width:20px; padding:2px 5px 1px;
-  font-family:var(--mono); font-size:11.5px; line-height:1.2; letter-spacing:.02em; font-weight:500;
+  position:absolute; top:5px; right:6px; min-width:28px; padding:3px 7px 2px;
+  font-family:var(--mono); font-size:15px; line-height:1.15; letter-spacing:.02em; font-weight:500;
   color:#0b0912; background:rgba(255,255,255,.34); border:1px solid rgba(11,9,18,.32);
   border-bottom-width:2px; border-radius:5px; text-align:center;
 }
@@ -170,7 +202,7 @@ h1 em{font-style:normal; color:var(--gold)}
 .pb.m{--pbc:#ff3fa6; --pbs:#a3205f}
 .pb.g{--pbc:#ffd84a; --pbs:#a3860f}
 .pb.v{--pbc:#9d78ff; --pbs:#553099}
-@media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{font-size:10px; top:4px; right:5px} .padrow{gap:8px} .legend .lg{display:none} }
+@media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{font-size:12px; top:4px; right:5px; min-width:22px; padding:2px 5px 1px} .padrow{gap:8px} }
 .stage .placeholder{position:absolute; inset:0; background:#06050a}
 .stage .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
 .stage .posterUI{
@@ -420,6 +452,22 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
   <div class="stage">
     <!-- Live WebGL scene. The published scene URL lives in SCENE_URL at the bottom of this file. -->
     <canvas id="scene" tabindex="0" aria-label="The Last Token arcade, running live"></canvas>
+    <div class="dpad jumppad" aria-label="Jump">
+      <button class="dk jump" data-key=" " aria-label="Jump">SPACE</button><i>Jump</i>
+    </div>
+    <div class="dpad walkpad" aria-label="Walk pad">
+      <div class="dcross">
+        <button class="dk up" data-key="ArrowUp" aria-label="Walk up">&uarr;</button>
+        <button class="dk left" data-key="ArrowLeft" aria-label="Walk left">&larr;</button>
+        <button class="dk down" data-key="ArrowDown" aria-label="Walk down">&darr;</button>
+        <button class="dk right" data-key="ArrowRight" aria-label="Walk right">&rarr;</button>
+      </div>
+    </div>
+    <button class="mute inscene" type="button" aria-pressed="false" title="Turn the sound off" aria-label="Sound">
+      <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
+      <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
+      <i>Sound on</i>
+    </button>
     <div class="placeholder" id="ph">
       <img class="poster" src="img/scene/hero-iso.jpg" alt="The Last Token arcade, seen from above">
       <div class="posterUI">
@@ -431,12 +479,8 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 
   <div class="pad">
     <div class="padtop">
-      <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot.</p>
+      <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Walk him with the pad or the arrow keys.</p>
       <div class="legend">
-        <span class="lg" aria-label="Arrow keys walk">
-          <span class="kcross"><kbd class="kcap">&uarr;</kbd><kbd class="kcap">&larr;</kbd><kbd class="kcap">&darr;</kbd><kbd class="kcap">&rarr;</kbd></span><i>Walk</i>
-        </span>
-        <span class="lg" aria-label="Space jumps"><kbd class="kcap kspace">Space</kbd><i>Jump</i></span>
         <button class="mute" id="mute" type="button" aria-pressed="false" title="Turn the sound off">
           <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
           <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
@@ -634,18 +678,20 @@ if (NativeAC) {
   window.AudioContext = Patched;
   if (window.webkitAudioContext) window.webkitAudioContext = Patched;
 }
-const muteBtn = document.getElementById("mute");
+const muteBtns = document.querySelectorAll(".mute");
 function applyMute() {
-  muteBtn.setAttribute("aria-pressed", muted ? "true" : "false");
-  muteBtn.title = muted ? "Turn the sound on" : "Turn the sound off";
-  muteBtn.querySelector("i").textContent = muted ? "Sound off" : "Sound on";
+  muteBtns.forEach((btn) => {
+    btn.setAttribute("aria-pressed", muted ? "true" : "false");
+    btn.title = muted ? "Turn the sound on" : "Turn the sound off";
+    btn.querySelector("i").textContent = muted ? "Sound off" : "Sound on";
+  });
   audioContexts.forEach((ctx) => {
     if (ctx.state === "closed") return;
     (muted ? ctx.suspend() : ctx.resume()).catch(() => {});
   });
   try { localStorage.setItem("lt-muted", muted ? "1" : "0"); } catch (_) {}
 }
-muteBtn.addEventListener("click", () => { muted = !muted; applyMute(); });
+muteBtns.forEach((btn) => btn.addEventListener("click", () => { muted = !muted; applyMute(); }));
 applyMute();
 window.lastToken = { audioContexts, get muted() { return muted; } };
 
@@ -672,6 +718,40 @@ document.querySelectorAll(".pb").forEach((b) => {
     canvas.focus();
     pressKey(b.dataset.key);
   });
+});
+
+/* The walk pad holds a key down for as long as the button is held, which is
+   what the Game Control listens for. Pointer capture keeps the release
+   arriving even when the finger slides off the button. */
+function arrowInit(key) {
+  const code = key === " " ? "Space" : key;
+  const num = { ArrowUp: 38, ArrowDown: 40, ArrowLeft: 37, ArrowRight: 39, " ": 32 }[key];
+  return { key: key, code: code, keyCode: num, which: num, bubbles: true, cancelable: true };
+}
+document.querySelectorAll(".dk").forEach((b) => {
+  const key = b.dataset.key;
+  let down = false;
+  const press = (ev) => {
+    if (down) return;
+    down = true;
+    b.classList.add("held");
+    try { b.setPointerCapture(ev.pointerId); } catch (_) {}
+    document.dispatchEvent(new KeyboardEvent("keydown", arrowInit(key)));
+  };
+  const release = () => {
+    if (!down) return;
+    down = false;
+    b.classList.remove("held");
+    document.dispatchEvent(new KeyboardEvent("keyup", arrowInit(key)));
+  };
+  b.addEventListener("pointerdown", press);
+  b.addEventListener("pointerup", release);
+  b.addEventListener("pointercancel", release);
+  b.addEventListener("lostpointercapture", release);
+  b.addEventListener("contextmenu", (ev) => ev.preventDefault());
+});
+window.addEventListener("blur", () => {
+  document.querySelectorAll(".dk.held").forEach((b) => b.dispatchEvent(new PointerEvent("pointerup")));
 });
 
 (async function () {
@@ -704,6 +784,7 @@ document.querySelectorAll(".pb").forEach((b) => {
       setTimeout(() => ph.remove(), 700);
     }
     document.querySelectorAll(".pb").forEach((b) => { b.disabled = false; });
+    document.querySelectorAll(".dpad, .mute.inscene").forEach((d) => d.classList.add("on"));
   } catch (err) {
     console.warn("Last Token: the live scene did not load, keeping the poster.", err);
     padhint.innerHTML =

@@ -83,10 +83,12 @@ suspends or resumes them all at once. The choice is remembered per browser in
 `localStorage`; if storage is unavailable the page simply starts with sound on.
 
 **Layout.** The hero is a two-column grid: title on the left, the scene card
-(7:5) on the right with the deck beneath it. The card's width is capped from
-the viewport height (`max-width: calc((100svh - 330px) * 1.4)`) so the whole
-hero, deck included, fits on the first screen of a laptop. Under 1000px it
-stacks.
+(16:9) on the right with the deck beneath it. A frame wider than the diorama
+only adds room at the sides, so widescreen is safe; a frame narrower than it
+would crop the palms, because the runtime fills its canvas rather than
+letterboxing. The card's width is capped from the viewport height
+(`max-width: calc((100svh - 330px) * 1.78)`) so the whole hero, deck included,
+fits on the first screen of a laptop. Under 1000px it stacks.
 
 ## Changing the scene
 
