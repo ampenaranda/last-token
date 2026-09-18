@@ -15,7 +15,7 @@
   --bg:#08070c;
   --ink:#f3effa;
   --dim:#8d849f;
-  --faint:#5d556e;
+  --faint:#8b83a0;
   --cyan:#3ef0ff;
   --mag:#ff3fa6;
   --gold:#ffd84a;
@@ -85,7 +85,7 @@ h1{
   font-size:clamp(72px,10.5vw,184px); line-height:.82; letter-spacing:.005em;
   margin:0 0 26px; color:var(--ink);
 }
-h1 em{font-style:normal; color:var(--gold)}
+h1 em{font-family:var(--display); font-style:normal; color:var(--gold)}
 .sub{max-width:46ch; color:var(--dim); font-size:17px; line-height:1.66; margin:0}
 .sub b{color:var(--ink); font-weight:500}
 .meta{
@@ -196,7 +196,9 @@ h1 em{font-style:normal; color:var(--gold)}
 }
 .pb:hover:not(:disabled){filter:brightness(1.1)}
 .pb:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--pbs)}
-.pb:focus-visible{outline:2px solid var(--ink); outline-offset:3px}
+.pb:focus-visible,.dk:focus-visible,.mute:focus-visible,.bar nav a:focus-visible,.credit a:focus-visible{outline:2px solid var(--cyan); outline-offset:3px}
+.skip{position:absolute; left:16px; top:-60px; z-index:60; padding:10px 14px; background:var(--gold); color:#0b0912; font-family:var(--mono); font-size:12px; border-radius:8px; text-decoration:none}
+.skip:focus{top:12px}
 .pb:disabled{opacity:.3; cursor:not-allowed; box-shadow:0 5px 0 var(--pbs)}
 .pb.c{--pbc:#3ef0ff; --pbs:#158fa0}
 .pb.m{--pbc:#ff3fa6; --pbs:#a3205f}
@@ -237,11 +239,14 @@ h1 em{font-style:normal; color:var(--gold)}
 
 /* ---------- sections ---------- */
 section{padding:clamp(64px,9vw,112px) 0 0}
-.head{
-  display:grid; grid-template-columns:minmax(0,1fr); gap:10px;
-  padding-top:22px; border-top:1px solid var(--line); margin-bottom:34px;
+.head{display:grid; gap:14px; padding-top:22px; border-top:1px solid var(--line); margin-bottom:34px}
+/* a coin tag in place of a chapter number: the token is the site's mark */
+.tag{
+  display:inline-flex; align-items:center; gap:9px; width:max-content;
+  font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold);
+  padding:6px 13px 6px 8px; border:1px solid rgba(255,216,74,.3); border-radius:999px; background:rgba(255,216,74,.06);
 }
-.head .no{font-family:var(--mono); font-size:11.5px; letter-spacing:.2em; color:var(--gold)}
+.tag .coin{width:16px; height:16px; filter:drop-shadow(0 0 6px rgba(255,216,74,.45))}
 h2{
   font-family:var(--display); font-weight:400; font-size:clamp(34px,5vw,50px);
   letter-spacing:.055em; text-transform:uppercase; margin:0; line-height:1;
@@ -250,29 +255,22 @@ h2 .accent{color:var(--cyan)}
 .lead{color:var(--dim); margin:4px 0 0; max-width:60ch; line-height:1.68; font-size:15.5px}
 @media (min-width:820px){
   .head{grid-template-columns:150px minmax(0,1fr); gap:0 34px; align-items:start}
-  .head .no{padding-top:8px}
+  .head .tag{grid-column:1; margin-top:6px}
   .head h2{grid-column:2}
   .head .lead{grid-column:2}
 }
 
-/* ---------- controls ---------- */
-.controls{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1px; background:var(--line-soft);
-  border:1px solid var(--line-soft); border-radius:var(--r-md); overflow:hidden}
-.ctl{
-  display:flex; align-items:center; gap:14px; padding:16px 18px; background:var(--bg);
-  transition:background .2s ease;
+/* ---------- artwork as a drifting backdrop ---------- */
+.bgfx{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; opacity:var(--bgo,0); transition:opacity .5s ease}
+.bgfx img{
+  position:absolute; width:min(62vw,940px); aspect-ratio:3/2; object-fit:cover; border-radius:28px;
+  filter:blur(9px) saturate(1.25); mix-blend-mode:screen; opacity:.17; will-change:transform;
+  transform:translateY(var(--py,0px));
 }
-.ctl:hover{background:#0d0b14}
-kbd{
-  font-family:var(--mono); font-weight:500; font-size:11.5px; letter-spacing:.04em;
-  min-width:44px; padding:7px 9px; text-align:center; border-radius:var(--r-sm);
-  color:var(--ink); border:1px solid var(--line); background:rgba(243,239,250,.05); flex:none;
-}
-kbd.c{color:var(--cyan); border-color:rgba(62,240,255,.34)}
-kbd.m{color:var(--mag); border-color:rgba(255,63,166,.34)}
-kbd.g{color:var(--gold); border-color:rgba(255,216,74,.34)}
-.ctl .t{font-size:14.5px; line-height:1.4}
-.ctl .t small{display:block; color:var(--faint); font-size:12.5px; margin-top:2px; line-height:1.5}
+.bgfx .b1{left:-12vw; top:6vh}
+.bgfx .b2{right:-14vw; top:42vh; opacity:.14}
+.bgfx .b3{left:18vw; top:78vh; opacity:.12}
+[data-depth]{transform:translateY(var(--py,0px))}
 
 /* ---------- polaroids ---------- */
 .strip{display:flex; gap:20px; overflow-x:auto; padding:6px 2px 24px; scroll-snap-type:x proximity}
@@ -281,16 +279,17 @@ kbd.g{color:var(--gold); border-color:rgba(255,216,74,.34)}
 .pola{
   flex:none; width:238px; scroll-snap-align:center; background:#efece4; border-radius:var(--r-sm);
   padding:12px 12px 0; box-shadow:0 20px 40px -18px rgba(0,0,0,.9); color:#191320; margin:0;
-  transform:rotate(var(--r,0deg)); transition:transform .3s cubic-bezier(.2,.7,.3,1);
+  transform:translateY(calc(var(--py,0px) + var(--lift,0px))) rotate(var(--r,0deg)) perspective(700px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));
+  transform-style:preserve-3d; transition:box-shadow .3s ease;
 }
-.pola:hover{transform:rotate(0deg) translateY(-8px)}
+.pola:hover{--lift:-8px; box-shadow:0 30px 50px -18px rgba(0,0,0,.95)}
 .pola img{width:100%; aspect-ratio:4/3; object-fit:contain; display:block; background:#0b0912}
 .pola .cap{
   font-family:var(--display); font-size:18px; letter-spacing:.07em; padding:11px 2px 14px; text-align:center; line-height:1.1;
 }
 .pola .cap small{
   display:block; font-family:var(--mono); font-size:10px; letter-spacing:.11em;
-  text-transform:uppercase; color:#7a7186; margin-top:5px;
+  text-transform:uppercase; color:#5e5670; margin-top:5px;
 }
 
 /* ---------- moodboard ---------- */
@@ -298,9 +297,10 @@ kbd.g{color:var(--gold); border-color:rgba(255,216,74,.34)}
 .pin{
   break-inside:avoid; margin:0 0 14px; position:relative; border-radius:var(--r-md); overflow:hidden;
   border:1px solid var(--line-soft); background:#0c0a12;
-  transition:transform .28s cubic-bezier(.2,.7,.3,1), border-color .28s ease;
+  transform:translateY(calc(var(--py,0px) + var(--lift,0px))) perspective(800px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg));
+  transform-style:preserve-3d; transition:border-color .28s ease;
 }
-.pin:hover{transform:translateY(-4px); border-color:rgba(62,240,255,.34)}
+.pin:hover{--lift:-4px; border-color:rgba(62,240,255,.34)}
 .pin img{display:block; width:100%}
 .pin figcaption{
   position:absolute; left:0; right:0; bottom:0; padding:30px 13px 11px;
@@ -319,14 +319,17 @@ kbd.g{color:var(--gold); border-color:rgba(255,216,74,.34)}
 .step{
   position:relative; border-radius:var(--r-md); overflow:hidden; border:1px solid var(--line-soft);
   background:#0a0810; margin:0; transition:border-color .25s ease;
+  transform:translateY(var(--py,0px)) perspective(800px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg)); transform-style:preserve-3d;
 }
 .step:hover{border-color:rgba(62,240,255,.28)}
 .step img{display:block; width:100%; aspect-ratio:1/1; object-fit:cover; background:#0c0a12}
 .step .no{
-  position:absolute; top:10px; left:10px; font-family:var(--mono); font-size:10.5px;
-  letter-spacing:.12em; color:var(--bg); background:var(--cyan);
-  padding:3px 7px; border-radius:var(--r-sm);
+  position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; color:var(--ink);
+  background:rgba(8,7,12,.72); border:1px solid rgba(255,216,74,.32); padding:4px 8px 4px 5px; border-radius:999px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
 }
+.step .no .coin{width:13px; height:13px}
 .step .txt{padding:13px 14px 16px}
 .step .txt b{
   font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.13em;
@@ -407,7 +410,13 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 </style>
 </head>
 <body>
+<a class="skip" href="#strip">Skip to the artwork</a>
 <div id="prog"></div>
+<div class="bgfx" aria-hidden="true">
+  <img class="b1" src="img/ideas/level-ref-01-neon-floor.jpg" alt="" data-depth="0.10">
+  <img class="b2" src="img/ideas/level-ref-04-hud-arcade.jpg" alt="" data-depth="0.18">
+  <img class="b3" src="img/ideas/station-dance-floor.jpg" alt="" data-depth="0.07">
+</div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="coinG" x1="0" y1="0" x2="0" y2="1">
@@ -425,7 +434,6 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
   <div class="in">
     <div class="mark">Last Token</div>
     <nav>
-      <a href="#controls">Controls</a>
       <a href="#strip">Strip</a>
       <a href="#ideas">Ideas</a>
       <a href="#robot">Robot</a>
@@ -512,72 +520,52 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
     </div>
   </div>
 
-  <section id="controls">
-    <div class="head rv">
-      <div class="no">01 / Controls</div>
-      <h2>Ten <span class="accent">keys</span></h2>
-      <p class="lead">Arrow keys move, everything else is a party trick. Every emote below also sits on one of the arcade buttons right under the scene, so nobody has to memorise a keyboard to see the robot move. The flash and the floor ring only fire where they belong: stand on the photo podium or the dance tiles and they answer.</p>
-    </div>
-    <div class="controls rv">
-      <div class="ctl"><kbd>&uarr;&darr;&larr;&rarr;</kbd><div class="t">Walk<small>Shift or Ctrl to run</small></div></div>
-      <div class="ctl"><kbd>Space</kbd><div class="t">Jump<small>Servo boing included</small></div></div>
-      <div class="ctl"><kbd class="g">F</kbd><div class="t">Photo booth<small>On the podium: flash, "say cheese", a print slides out</small></div></div>
-      <div class="ctl"><kbd class="c">1</kbd><div class="t">Samba<small>On the tiles: the centre ring lights up cyan</small></div></div>
-      <div class="ctl"><kbd class="c">2</kbd><div class="t">Hip hop<small>"Break it down!"</small></div></div>
-      <div class="ctl"><kbd class="m">C</kbd><div class="t">Cheer<small>"Woo-hoo! Yeah!"</small></div></div>
-      <div class="ctl"><kbd class="m">H</kbd><div class="t">Wave<small>"Hey there!"</small></div></div>
-      <div class="ctl"><kbd class="m">T</kbd><div class="t">Thumbs up<small>"Nice! Thumbs up!"</small></div></div>
-      <div class="ctl"><kbd class="m">L</kbd><div class="t">Look around<small>"Hmm, where's the DJ?"</small></div></div>
-      <div class="ctl"><kbd class="g">Z</kbd><div class="t">Zombie walk<small>"Braaains, beep boop."</small></div></div>
-    </div>
-  </section>
-
   <section id="strip">
     <div class="head rv">
-      <div class="no">02 / Artwork</div>
+      <span class="tag"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>Artwork</span>
       <h2>The <span class="accent">strip</span></h2>
       <p class="lead">Marquees and props, generated for the level and cut by hand. The three signs are mounted on posts in the scene; the props were reconstructed into 3D and placed on the floor.</p>
     </div>
     <div class="strip rv">
-      <figure class="pola" style="--r:-2.4deg"><img src="img/marquee-galaxy-drift.png" alt="Galaxy Drift marquee"><figcaption class="cap">Galaxy Drift<small>north sign</small></figcaption></figure>
-      <figure class="pola" style="--r:1.8deg"><img src="img/marquee-token-rush.png" alt="Token Rush marquee"><figcaption class="cap">Token Rush<small>east sign</small></figcaption></figure>
-      <figure class="pola" style="--r:-1.2deg"><img src="img/marquee-disco-panic.png" alt="Disco Panic marquee"><figcaption class="cap">Disco Panic<small>west sign</small></figcaption></figure>
-      <figure class="pola" style="--r:2.6deg"><img src="img/arcade-screen-512.png" alt="Pixel art arcade screen"><figcaption class="cap">Attract mode<small>cabinet screen</small></figcaption></figure>
-      <figure class="pola" style="--r:-2deg"><img src="img/speaker-tower-01.jpg" alt="Speaker tower reference"><figcaption class="cap">Speaker tower<small>prop reference</small></figcaption></figure>
-      <figure class="pola" style="--r:1.4deg"><img src="img/photo-booth-01.jpg" alt="Photo booth reference"><figcaption class="cap">Photo booth<small>prop reference</small></figcaption></figure>
-      <figure class="pola" style="--r:-1.6deg"><img src="img/neon-palm-01.jpg" alt="Neon palm reference"><figcaption class="cap">Neon palm<small>prop reference</small></figcaption></figure>
-      <figure class="pola" style="--r:2.2deg"><img src="img/arcade-cabinet-01.jpg" alt="Arcade cabinet reference"><figcaption class="cap">Cabinet<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="0.05" style="--r:-2.4deg"><img src="img/marquee-galaxy-drift.png" alt="Galaxy Drift marquee"><figcaption class="cap">Galaxy Drift<small>north sign</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.04" style="--r:1.8deg"><img src="img/marquee-token-rush.png" alt="Token Rush marquee"><figcaption class="cap">Token Rush<small>east sign</small></figcaption></figure>
+      <figure class="pola" data-depth="0.06" style="--r:-1.2deg"><img src="img/marquee-disco-panic.png" alt="Disco Panic marquee"><figcaption class="cap">Disco Panic<small>west sign</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.05" style="--r:2.6deg"><img src="img/arcade-screen-512.png" alt="Pixel art arcade screen"><figcaption class="cap">Attract mode<small>cabinet screen</small></figcaption></figure>
+      <figure class="pola" data-depth="0.04" style="--r:-2deg"><img src="img/speaker-tower-01.jpg" alt="Speaker tower reference"><figcaption class="cap">Speaker tower<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.06" style="--r:1.4deg"><img src="img/photo-booth-01.jpg" alt="Photo booth reference"><figcaption class="cap">Photo booth<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="0.05" style="--r:-1.6deg"><img src="img/neon-palm-01.jpg" alt="Neon palm reference"><figcaption class="cap">Neon palm<small>prop reference</small></figcaption></figure>
+      <figure class="pola" data-depth="-0.04" style="--r:2.2deg"><img src="img/arcade-cabinet-01.jpg" alt="Arcade cabinet reference"><figcaption class="cap">Cabinet<small>prop reference</small></figcaption></figure>
     </div>
   </section>
 
   <section id="ideas">
     <div class="head rv">
-      <div class="no">03 / Research</div>
+      <span class="tag"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>Research</span>
       <h2>First <span class="accent">ideas</span></h2>
       <p class="lead">Before anything was modelled, the level was argued out in pictures: how high the neon sits, where the checkerboard stops, what a station looks like from above. Most of these never made it in whole, but they set the palette and the rules.</p>
     </div>
     <div class="board rv">
-      <figure class="pin"><img src="img/ideas/level-ref-01-neon-floor.jpg" alt="Neon floor concept"><figcaption><b>Neon floor</b><span>The grid, the glow line, the black around it</span></figcaption></figure>
-      <figure class="pin"><img src="img/ideas/station-dance-floor.jpg" alt="Dance floor station concept"><figcaption><b>Dance station</b><span>Lit tiles as a place you stand, not decoration</span></figcaption></figure>
-      <figure class="pin"><img src="img/ideas/level-ref-02-checker-boombox.jpg" alt="Checker and boombox concept"><figcaption><b>Checker &amp; radio</b><span>Where the black-and-white belongs</span></figcaption></figure>
-      <figure class="pin"><img src="img/ideas/level-ref-04-hud-arcade.jpg" alt="HUD and arcade concept"><figcaption><b>HUD &amp; cabinets</b><span>What the screen furniture should feel like</span></figcaption></figure>
-      <figure class="pin"><img src="img/ideas/level-ref-03-8bit-zone.jpg" alt="8-bit zone concept"><figcaption><b>8-bit zone</b><span>The pixel language for the cabinet screen</span></figcaption></figure>
-      <figure class="pin"><img src="img/ideas/marquee-sheet-01.jpg" alt="Marquee sticker sheet"><figcaption><b>Marquee sheet</b><span>Six signs generated together, then cut out by hand</span></figcaption></figure>
+      <figure class="pin" data-depth="-0.05"><img src="img/ideas/level-ref-01-neon-floor.jpg" alt="Neon floor concept"><figcaption><b>Neon floor</b><span>The grid, the glow line, the black around it</span></figcaption></figure>
+      <figure class="pin" data-depth="0.04"><img src="img/ideas/station-dance-floor.jpg" alt="Dance floor station concept"><figcaption><b>Dance station</b><span>Lit tiles as a place you stand, not decoration</span></figcaption></figure>
+      <figure class="pin" data-depth="-0.06"><img src="img/ideas/level-ref-02-checker-boombox.jpg" alt="Checker and boombox concept"><figcaption><b>Checker &amp; radio</b><span>Where the black-and-white belongs</span></figcaption></figure>
+      <figure class="pin" data-depth="0.05"><img src="img/ideas/level-ref-04-hud-arcade.jpg" alt="HUD and arcade concept"><figcaption><b>HUD &amp; cabinets</b><span>What the screen furniture should feel like</span></figcaption></figure>
+      <figure class="pin" data-depth="-0.04"><img src="img/ideas/level-ref-03-8bit-zone.jpg" alt="8-bit zone concept"><figcaption><b>8-bit zone</b><span>The pixel language for the cabinet screen</span></figcaption></figure>
+      <figure class="pin" data-depth="0.05"><img src="img/ideas/marquee-sheet-01.jpg" alt="Marquee sticker sheet"><figcaption><b>Marquee sheet</b><span>Six signs generated together, then cut out by hand</span></figcaption></figure>
     </div>
   </section>
 
   <section id="robot">
     <div class="head rv">
-      <div class="no">04 / Character</div>
+      <span class="tag"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>Character</span>
       <h2>Building the <span class="accent">robot</span></h2>
       <p class="lead">The hero took the longest road: drawn, reconstructed into geometry, rigged, then rebuilt again in Blender when every clip turned out to float a few units above the floor.</p>
     </div>
     <div class="steps rv">
-      <figure class="step"><span class="no">01</span><img src="img/process/robot-hero.jpg" alt="Robot concept render"><figcaption class="txt"><b>Concept</b><span>The character, before it had any geometry</span></figcaption></figure>
-      <figure class="step"><span class="no">02</span><img src="img/process/robot-turnaround.jpg" alt="Robot turnaround views"><figcaption class="txt"><b>Turnaround</b><span>Views generated so it could be reconstructed</span></figcaption></figure>
-      <figure class="step"><span class="no">03</span><img src="img/process/robot-tripo-texture-latest.jpg" alt="Reconstructed robot with baked texture"><figcaption class="txt"><b>Reconstructed</b><span>Image to 3D, chrome and cream baked in</span></figcaption></figure>
-      <figure class="step"><span class="no">04</span><img src="img/process/robot-mixamo-rigged.jpg" alt="Robot auto-rigged"><figcaption class="txt"><b>Rigged</b><span>Auto-rigged so it could take motion clips</span></figcaption></figure>
-      <figure class="step"><span class="no">05</span><img src="img/process/robot-mixamo-anims-pack.jpg" alt="Animation clip pack"><figcaption class="txt"><b>Clip pack</b><span>Eleven clips, merged into one file in Blender</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>1</span><img src="img/process/robot-hero.jpg" alt="Robot concept render"><figcaption class="txt"><b>Concept</b><span>The character, before it had any geometry</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>2</span><img src="img/process/robot-turnaround.jpg" alt="Robot turnaround views"><figcaption class="txt"><b>Turnaround</b><span>Views generated so it could be reconstructed</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>3</span><img src="img/process/robot-tripo-texture-latest.jpg" alt="Reconstructed robot with baked texture"><figcaption class="txt"><b>Reconstructed</b><span>Image to 3D, chrome and cream baked in</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>4</span><img src="img/process/robot-mixamo-rigged.jpg" alt="Robot auto-rigged"><figcaption class="txt"><b>Rigged</b><span>Auto-rigged so it could take motion clips</span></figcaption></figure>
+      <figure class="step"><span class="no"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>5</span><img src="img/process/robot-mixamo-anims-pack.jpg" alt="Animation clip pack"><figcaption class="txt"><b>Clip pack</b><span>Eleven clips, merged into one file in Blender</span></figcaption></figure>
     </div>
   </section>
 
@@ -588,7 +576,7 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
 
   <section id="made">
     <div class="head rv">
-      <div class="no">05 / Build notes</div>
+      <span class="tag"><svg class="coin" aria-hidden="true"><use href="#token"/></svg>Build notes</span>
       <h2>How it was <span class="accent">made</span></h2>
       <p class="lead">Four pipelines feeding one real-time scene, wired through its event system.</p>
     </div>
@@ -790,6 +778,49 @@ window.addEventListener("blur", () => {
     padhint.innerHTML =
       '<span class="dot"></span> The live scene did not load, so the buttons are off. This is a still.';
   }
+})();
+
+/* Parallax and card tilt. One scroll handler drives the backdrop's fade-in and
+   drift and the depth of every [data-depth] element; pointer position tilts
+   the cards. Both stay off when the visitor prefers reduced motion. */
+(function () {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const root = document.documentElement;
+  const hero = document.querySelector(".hero");
+  const bg = [...document.querySelectorAll(".bgfx img")];
+  const cards = [...document.querySelectorAll("[data-depth]:not(.bgfx img)")];
+  let queued = false;
+  function frame() {
+    queued = false;
+    const y = scrollY, vh = innerHeight;
+    const heroEnd = hero.offsetTop + hero.offsetHeight;
+    root.style.setProperty("--bgo", Math.min(1, Math.max(0, (y - heroEnd + vh * 0.85) / (vh * 0.6))).toFixed(3));
+    bg.forEach((el) => { el.style.setProperty("--py", (-y * parseFloat(el.dataset.depth)).toFixed(1) + "px"); });
+    cards.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.bottom < -200 || r.top > vh + 200) return;
+      const mid = r.top + r.height / 2 - vh / 2;
+      el.style.setProperty("--py", (-mid * parseFloat(el.dataset.depth)).toFixed(1) + "px");
+    });
+  }
+  addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(frame); } }, { passive: true });
+  addEventListener("resize", frame);
+  frame();
+
+  document.querySelectorAll(".pola, .pin, .step").forEach((card) => {
+    card.addEventListener("pointermove", (e) => {
+      if (e.pointerType === "touch") return;
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      card.style.setProperty("--tx", (py * -9).toFixed(2) + "deg");
+      card.style.setProperty("--ty", (px * 11).toFixed(2) + "deg");
+    });
+    card.addEventListener("pointerleave", () => {
+      card.style.setProperty("--tx", "0deg");
+      card.style.setProperty("--ty", "0deg");
+    });
+  });
 })();
 
 /* scroll progress */

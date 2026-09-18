@@ -74,12 +74,17 @@ The buttons stay disabled until the scene finishes loading, and the hint line
 above them says why. Each button wears its key as a small cap in the corner.
 
 Arrow keys walk the robot and Space makes him jump. Those are Spline's own Game
-Control; the deck shows them as a key legend. Mouse orbit is switched off in
-the scene (`playControls('none')`), so the view stays put.
+Control. The pads drawn over the scene — a Space key bottom-left, an arrow cross
+bottom-right — hold the same keys down for as long as they are pressed, so
+mouse and touch drive him the same way (pointer capture keeps the release
+arriving when a finger slides off). Mouse orbit is off (`playControls('none')`)
+and the play camera is detached from the Game Control, so the view never moves.
+Invisible edge walls with positioned physics keep him on the floor.
 
 **Sound.** The runtime plays through WebAudio. The page wraps `AudioContext`
-before the runtime loads, keeps every context it opens, and the Sound button
-suspends or resumes them all at once. The choice is remembered per browser in
+before the runtime loads, keeps every context it opens, and the Sound buttons
+(one in the deck, one in the top-right of the scene) suspend or resume them all
+at once. The choice is remembered per browser in
 `localStorage`; if storage is unavailable the page simply starts with sound on.
 
 **Layout.** The hero is a two-column grid: title on the left, the scene card
@@ -89,6 +94,41 @@ would crop the palms, because the runtime fills its canvas rather than
 letterboxing. The card's width is capped from the viewport height
 (`max-width: calc((100svh - 330px) * 1.78)`) so the whole hero, deck included,
 fits on the first screen of a laptop. Under 1000px it stacks.
+
+## The page, as a design system
+
+![The hero: title left, the live scene right, the deck beneath it](docs/img/site-hero.jpg)
+
+- **Tokens** live on `:root`: ink `#f3effa`, dim `#8d849f`, faint `#8b83a0`
+  (raised from `#5d556e` so small mono labels clear 4.5:1 on the background),
+  cyan `#3ef0ff`, magenta `#ff3fa6`, gold `#ffd84a`, and the three radii.
+  Bebas Neue for display, Space Grotesk for body, JetBrains Mono for labels.
+- **Section markers** are coin tags — the site's token mark and a mono label —
+  instead of chapter numbers.
+- **The artwork is the backdrop.** Three moodboard images drift behind the
+  lower page in a fixed layer (blurred, screen-blended, ~15 % opacity), fading
+  in after the hero and moving at their own rates as you scroll. Cards carry a
+  `data-depth` and drift too; pointer position tilts the polaroids, pins and
+  process steps in 3D.
+- **Accessibility**: a skip link, visible focus rings on every control, labelled
+  pads and toggles, `alt` on every image, and every motion effect (parallax,
+  tilt, reveals, the ticker, the coin) switches off under
+  `prefers-reduced-motion`.
+
+![The artwork strip and the research board](docs/img/site-artwork.jpg)
+
+## Loading
+
+The poster in the scene card (`img/scene/hero-iso.jpg`) is a capture of the live
+canvas through the play camera — `canvas.toDataURL()` works on the runtime's
+canvas — so it matches the scene exactly and the fade from still to live is
+invisible. Regenerate it after any camera or layout change (see
+`docs/build-notes.md`, "Poster capture").
+
+Spline's own loading options live in Export → Viewer → **Overview** (Loading,
+Loading Preview) and the orbit/pan/zoom, cursor and page-scroll switches in
+**Play Settings**. Orbit, pan and zoom are off there; the page keeps its own
+poster rather than Spline's loading preview so the two never disagree.
 
 ## Changing the scene
 
@@ -123,7 +163,7 @@ the music rather than near it.
 
 ## The build log
 
-[`docs/build-notes.md`](docs/build-notes.md) is the real record: eight days of
+[`docs/build-notes.md`](docs/build-notes.md) is the real record: nine days of
 working the Spline editor through its automation bridge, including the failures.
 The engine limits that cost the most time are all in there.
 

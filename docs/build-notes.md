@@ -793,3 +793,93 @@ until the next run_code call.
   `ctx.resume` while muted, or the runtime's own gesture handler un-mutes.
 - **Two `<section>`s in a row both take the global `section{padding-top}`** —
   the theater needed `padding:0` a second time after the hero rebuild.
+
+
+### Day 9, third pass: walls, pads, a camera that stays put
+
+- **The play camera was following the robot.** The Game Control had the Iso
+  Camera assigned (`camera: <id>`, axes Locked), so walking shifted the whole
+  diorama in the card and read as "the mouse moves the scene".
+  `updateEvent(gameControlId, { camera: null })` detaches it; with the whole
+  diorama in frame there is nothing to follow.
+- **Edge walls**: four cubes with `opacity(0)`, `shadows(false)` and
+  `physics({ type: 'positioned' })` just inside the neon rim. Butt-joint them
+  (N/S shorter than E/W, 10 units of corner gap) and lift them off the floor
+  plane or the z-fighting report lists every shared face — invisible or not.
+- **Re-texturing a print**: `layer('texture', { image })` on an object that
+  already has a texture layer leaves the surface WHITE, even though the stack
+  reads back with the new data. `removeLayer('texture')` then
+  `addLayer('texture', { image })` renders. Same lesson as Day 8, now with the
+  read-back to prove the data was there.
+- **Shrinking an assembly in place**: `newPos = pivot + k * (pos - pivot)` and
+  `scale(k)` per part, pivot at the foot of the post, so the wall stays planted.
+- **On-screen pads**: `pointerdown` dispatches the arrow `keydown` on
+  `document`, `pointerup`/`pointercancel`/`lostpointercapture` the `keyup`;
+  `setPointerCapture` on the button. Arrow directions are camera-relative
+  (`orientWith: 'camera'`), so ↓ walks toward the viewer's bottom corner, not
+  world +z — ↓+← together walks world +z.
+
+
+### Day 9, fourth pass: prints, pads, poster, page
+
+![The live scene after the fourth pass](img/scene-live.jpg)
+
+**The white prints.** Two booth photos on the print wall showed as white cards.
+Three separate causes, found in this order:
+
+1. A hand-pasted base64 payload was one character short — the read-back said
+   the layer had 9,414 chars of data, the file had 9,415. A corrupt JPEG
+   decodes to nothing and the layer renders white. **Checksum every payload
+   in-script** (`length` + a char-code sum) before applying it.
+2. Updating the image on an *existing* texture layer left it white even with
+   good data; `removeLayer('texture')` + `addLayer('texture', { image })`
+   rendered. (Same as Day 8.)
+3. Print 5 still stayed white with a perfect stack, so it was the object, not
+   the material: its photo plane sat **0.35 units inside its card and 20 units
+   too low** — the white card was in front of it. Print 2's plane sits 3.5 in
+   front and 18 above. Mirror a working sibling's offset onto the card.
+
+![The print wall, all six photos](img/print-wall.jpg)
+
+**The camera that followed.** The Game Control had the Iso Camera assigned, so
+walking moved the whole diorama in the card — "the mouse moves the scene".
+`updateEvent(gameControlId, { camera: null })` detaches it; `playControls('none')`
+alone only kills orbit.
+
+**Edge walls.** Four cubes with `opacity(0)`, `shadows(false)` and
+`physics({ type: 'positioned' })` just inside the neon rim, butt-jointed with a
+10-unit corner gap and lifted off the floor plane — or the z-fighting report
+lists every shared face, invisible or not. Tested by walking ↓+← for 6 s from
+the podium: the robot stops on the floor strip at the edge.
+
+**Pads.** `pointerdown` dispatches the arrow `keydown` on `document`,
+`pointerup`/`pointercancel`/`lostpointercapture` the `keyup`, with
+`setPointerCapture` on the button. Arrows are camera-relative
+(`orientWith: 'camera'`): ↓ walks toward the viewer's bottom corner, ↓+←
+walks world +z.
+
+**Poster capture.** `canvas.toDataURL()` works on the runtime canvas (mean
+luminance 40, not black). A 30-line Python receiver on `127.0.0.1:8766` with
+CORS headers takes the POSTed data URL and writes the JPEG; resized to 1600 wide
+it is `img/scene/hero-iso.jpg`. Redo it after any camera or layout change.
+
+**Play Settings.** Export → Viewer has two tabs: *Overview* (Main Scene, Camera,
+Renderer, Logo, Loading, Loading Preview, Hint, Mouse Events) and *Play
+Settings* (BG colour, page scroll, cursor, orbit/pan/zoom, soft orbit, orbit
+speed, touch orbit/pan fingers). `playControls('none')` shows there as Orbit,
+Pan and Zoom = No.
+
+**Runtime note.** On Chrome's WebGL path the runtime logs a shader compile
+error inside its own particle material (`quickFadeInOut` overload). It is not
+page code; particles may not draw on that path.
+
+**The page.** Keys section removed (the buttons are the reference). Coin tags
+replace chapter numbers. The moodboard drifts behind the lower page as a fixed,
+blurred, screen-blended layer that fades in after the hero; cards carry a
+`data-depth` and tilt to the pointer. `--faint` raised to `#8b83a0` for
+contrast. Skip link, focus rings, reduced-motion switch-offs.
+
+![Research board with the drifting backdrop](img/site-research.jpg)
+![The robot's road, as coin-numbered steps](img/site-robot.jpg)
+![Build notes and the counters](img/site-notes.jpg)
+![Phone layout](img/site-mobile.jpg)
