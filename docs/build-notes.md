@@ -769,3 +769,27 @@ jukebox. Read the returned array instead.
 `duplicate()` leaves the COPY selected, so `rename`/`position`/`scale` right
 after it act on the new object — but the copy is not visible to `select()`
 until the next run_code call.
+
+
+### Day 9, later: the second pass
+
+- **`runMode: "Once"` on a Transition action means once per session.** The
+  flash and the sliding polaroid were authored that way, so the photo booth
+  fired on the first press and never again. `updateAction(e, id, { runMode:
+  'Normal' })` makes them repeat; the read-back shows the new value.
+- **Longer emotes without new clips**: a second `Animation` action for the same
+  clip at `delay = clipLength`, and the idle return pushed to `2 × clipLength`.
+  Cheer 2.90 s, wave 3.17 s, thumbs 4.17 s (from `docs/animation-clips.md`),
+  look 1.00 s played three times. Zombie is a looping mode and stays as is.
+- **A voice line is just an `Audio` action on the KeyDown** —
+  `removeAction(eventId, actionId)` silences hip hop. Samba's audio is the
+  dance stab, not a voice, so it stays.
+- **`playControls('none')`** kills mouse orbit in play mode and exports; the
+  Game Control's locked camera is unaffected.
+- **Mute from the page**: wrap `window.AudioContext` before the runtime module
+  loads, keep the contexts it creates, and `suspend()`/`resume()` them. The
+  runtime opens two — one it closes immediately (a probe), one it plays
+  through — so skip `closed` contexts or the promise rejects. Override
+  `ctx.resume` while muted, or the runtime's own gesture handler un-mutes.
+- **Two `<section>`s in a row both take the global `section{padding-top}`** —
+  the theater needed `padding:0` a second time after the hero rebuild.

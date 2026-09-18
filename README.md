@@ -71,15 +71,22 @@ behaviour to maintain. The earlier approach, invisible hook objects fired with
 | Wave | `H` | Photo | `F` |
 
 The buttons stay disabled until the scene finishes loading, and the hint line
-above them says why.
+above them says why. Each button wears its key as a small cap in the corner.
 
 Arrow keys walk the robot and Space makes him jump. Those are Spline's own Game
-Control.
+Control; the deck shows them as a key legend. Mouse orbit is switched off in
+the scene (`playControls('none')`), so the view stays put.
 
-The stage fills the viewport on a laptop or desktop. Below 900px the scene would
-be framed narrower than the diorama, and because the runtime fills its canvas
-rather than letterboxing, that crops the neon palms off the corners — so at those
-widths the stage keeps the diorama's own 7:5 shape instead of the viewport's.
+**Sound.** The runtime plays through WebAudio. The page wraps `AudioContext`
+before the runtime loads, keeps every context it opens, and the Sound button
+suspends or resumes them all at once. The choice is remembered per browser in
+`localStorage`; if storage is unavailable the page simply starts with sound on.
+
+**Layout.** The hero is a two-column grid: title on the left, the scene card
+(7:5) on the right with the deck beneath it. The card's width is capped from
+the viewport height (`max-width: calc((100svh - 330px) * 1.4)`) so the whole
+hero, deck included, fits on the first screen of a laptop. Under 1000px it
+stacks.
 
 ## Changing the scene
 

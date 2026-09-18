@@ -69,81 +69,98 @@ body::after{
 .bar nav a:hover{color:var(--cyan)}
 @media (max-width:720px){ .bar nav{display:none} }
 
-/* ---------- hero ---------- */
-header{padding:clamp(56px,10vw,104px) 0 0}
+/* ---------- hero: title left, scene right, deck under the scene ---------- */
+.herowrap{max-width:1880px; margin:0 auto; padding:0 var(--gut)}
+.hero{
+  display:grid; grid-template-columns:minmax(280px,1fr) minmax(0,1.7fr);
+  gap:clamp(28px,4vw,72px); align-items:center; padding:clamp(36px,5vw,64px) 0 0;
+}
+header{padding:0}
 .kicker{
   font-family:var(--mono); font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
   color:var(--cyan); margin:0 0 20px;
 }
 h1{
   font-family:var(--display); font-weight:400;
-  font-size:clamp(72px,15vw,180px); line-height:.82; letter-spacing:.005em;
+  font-size:clamp(72px,10.5vw,184px); line-height:.82; letter-spacing:.005em;
   margin:0 0 26px; color:var(--ink);
 }
 h1 em{font-style:normal; color:var(--gold)}
-.sub{max-width:56ch; color:var(--dim); font-size:17px; line-height:1.68; margin:0}
+.sub{max-width:46ch; color:var(--dim); font-size:17px; line-height:1.66; margin:0}
 .sub b{color:var(--ink); font-weight:500}
 .meta{
-  display:flex; flex-wrap:wrap; gap:8px 28px; margin:30px 0 0;
+  display:flex; flex-wrap:wrap; gap:8px 24px; margin:28px 0 0;
   font-family:var(--mono); font-size:11.5px; letter-spacing:.09em;
   text-transform:uppercase; color:var(--faint);
 }
 .meta span b{color:var(--dim); font-weight:400}
+@media (max-width:1000px){
+  .hero{grid-template-columns:1fr; gap:36px; align-items:start}
+  h1{font-size:clamp(72px,15vw,150px)}
+  .sub{max-width:56ch}
+}
 
 /* ---------- theater ---------- */
+/* A <section>, so it must opt out of the global section padding. On short
+   viewports it narrows (keeping 7:5) so the deck stays on the first screen. */
 .theater{
-  position:relative; margin:44px 0 0; padding:0;
-  height:86svh; min-height:560px; max-height:1000px;
-  display:grid; grid-template-rows:1fr auto;
-  background:#06050a; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+  position:relative; margin:0; padding:0; display:grid; gap:14px; min-width:0;
+  width:100%; max-width:max(520px, calc((100svh - 330px) * 1.4)); justify-self:end;
 }
-.stage{position:relative; overflow:hidden; background:#06050a}
-/* The scene fills its frame, so a frame narrower than the diorama crops the
-   palms off the corners. Below a laptop width the stage keeps the diorama's
-   own shape instead of the viewport's. */
-@media (max-width:900px){
-  .theater{height:auto; min-height:0; max-height:none}
-  .stage{aspect-ratio:7/5}
+.stage{
+  position:relative; overflow:hidden; aspect-ratio:7/5; background:#06050a;
+  border:1px solid var(--line); border-radius:var(--r-lg);
+  box-shadow:0 40px 120px -30px rgba(107,75,255,.42);
 }
 .stage spline-viewer,.stage iframe,.stage canvas{width:100%; height:100%; display:block; border:0; outline:none}
 
 /* ---------- control deck ---------- */
-.pad{
-  padding:12px var(--gut) 16px; background:#09080f;
-  border-top:1px solid var(--line); box-shadow:0 -34px 70px -34px rgba(107,75,255,.55);
+.pad{padding:0}
+.padtop{display:flex; flex-wrap:wrap; align-items:center; gap:10px 20px; margin:0 0 12px}
+.padhint{
+  display:flex; gap:10px; align-items:center; margin:0; flex:1 1 220px;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
 }
-.padin{max-width:1120px; margin:0 auto}
-.deck{display:grid; grid-template-columns:1fr auto; gap:14px 28px; align-items:end}
-.keys{display:grid; grid-template-columns:auto auto; gap:8px 14px; align-items:end; padding-bottom:2px}
-.kcross{display:grid; grid-template-columns:repeat(3,32px); grid-template-rows:repeat(2,32px); gap:4px}
+.padhint .dot{width:5px; height:5px; border-radius:50%; background:var(--cyan); flex:none}
+.legend{display:flex; align-items:center; gap:16px; margin-left:auto}
+.lg{display:flex; align-items:center; gap:8px}
+.lg i,.mute i{font-style:normal; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint)}
+.kcross{display:grid; grid-template-columns:repeat(3,26px); grid-template-rows:repeat(2,26px); gap:3px}
 .kcross kbd:nth-child(1){grid-area:1/2}
 .kcross kbd:nth-child(2){grid-area:2/1}
 .kcross kbd:nth-child(3){grid-area:2/2}
 .kcross kbd:nth-child(4){grid-area:2/3}
 .kcap{
-  display:grid; place-items:center; min-width:32px; height:32px; padding:0 8px;
-  font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--ink);
-  background:#141223; border:1px solid var(--line); border-bottom-width:3px; border-radius:7px;
+  display:grid; place-items:center; min-width:26px; height:26px; padding:0 6px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--ink);
+  background:#141223; border:1px solid var(--line); border-bottom-width:3px; border-radius:6px;
 }
-.kspace{width:96px}
-.klab{font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); text-align:center; margin-top:6px}
-@media (max-width:760px){ .deck{grid-template-columns:1fr} .keys{display:none} }
-.padhint{
-  display:flex; gap:10px; align-items:center; margin:0 0 10px;
-  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--faint);
+.kspace{width:70px}
+.mute{
+  display:flex; align-items:center; gap:8px; padding:6px 10px 6px 8px;
+  background:#141223; border:1px solid var(--line); border-radius:999px; cursor:pointer; color:var(--ink);
+  transition:border-color .18s ease, background .18s ease;
 }
-.padhint .dot{width:5px; height:5px; border-radius:50%; background:var(--cyan); flex:none}
+.mute:hover{border-color:var(--cyan)}
+.mute svg{width:16px; height:16px; display:block}
+.mute .off{display:none}
+.mute[aria-pressed="true"] .on{display:none}
+.mute[aria-pressed="true"] .off{display:block}
+.mute[aria-pressed="true"] i{color:var(--mag)}
 .padrow{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
 .pb{
   position:relative; font-family:var(--display); font-weight:400; font-size:23px; letter-spacing:.09em;
-  text-transform:uppercase; line-height:1; padding:16px 10px 14px;
+  text-transform:uppercase; line-height:1; padding:18px 10px 16px;
   border:0; border-radius:13px; cursor:pointer; color:#0b0912;
   background:var(--pbc); box-shadow:0 5px 0 var(--pbs), 0 12px 24px -10px rgba(0,0,0,.85);
   transition:transform .08s ease, box-shadow .08s ease, filter .18s ease;
 }
+/* the key that does the same thing, worn like a keycap on the button */
 .pb .k{
-  position:absolute; top:6px; right:9px; font-family:var(--mono); font-size:9.5px;
-  letter-spacing:.04em; opacity:.45; font-weight:500;
+  position:absolute; top:6px; right:7px; min-width:20px; padding:2px 5px 1px;
+  font-family:var(--mono); font-size:11.5px; line-height:1.2; letter-spacing:.02em; font-weight:500;
+  color:#0b0912; background:rgba(255,255,255,.34); border:1px solid rgba(11,9,18,.32);
+  border-bottom-width:2px; border-radius:5px; text-align:center;
 }
 .pb:hover:not(:disabled){filter:brightness(1.1)}
 .pb:active:not(:disabled){transform:translateY(5px); box-shadow:0 0 0 var(--pbs)}
@@ -153,7 +170,7 @@ h1 em{font-style:normal; color:var(--gold)}
 .pb.m{--pbc:#ff3fa6; --pbs:#a3205f}
 .pb.g{--pbc:#ffd84a; --pbs:#a3860f}
 .pb.v{--pbc:#9d78ff; --pbs:#553099}
-@media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{display:none} .padrow{gap:8px} .pad{padding-bottom:16px} }
+@media (max-width:620px){ .pb{font-size:15px; letter-spacing:.03em; padding:15px 4px 13px; border-radius:11px} .pb .k{font-size:10px; top:4px; right:5px} .padrow{gap:8px} .legend .lg{display:none} }
 .stage .placeholder{position:absolute; inset:0; background:#06050a}
 .stage .poster{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
 .stage .posterUI{
@@ -385,8 +402,8 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
   </div>
 </div>
 
-<div class="wrap">
-
+<div class="herowrap">
+<section class="hero">
   <header>
     <p class="kicker">A WebGL study in animation, controls and interaction</p>
     <h1>Last<br><em>Token</em></h1>
@@ -398,8 +415,6 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
       <span><b>2026</b></span>
     </div>
   </header>
-
-</div><!-- /wrap -->
 
 <section class="theater rv">
   <div class="stage">
@@ -415,33 +430,34 @@ footer{padding:clamp(70px,10vw,120px) 0 88px; margin-top:clamp(64px,9vw,112px); 
   </div>
 
   <div class="pad">
-    <div class="padin">
-      <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot. Arrow keys walk him, Space jumps.</p>
-      <div class="deck">
-      <div class="padrow">
-        <button class="pb c" data-key="1" disabled>Samba<span class="k">1</span></button>
-        <button class="pb m" data-key="2" disabled>Hip Hop<span class="k">2</span></button>
-        <button class="pb g" data-key="c" disabled>Cheer<span class="k">C</span></button>
-        <button class="pb v" data-key="h" disabled>Wave<span class="k">H</span></button>
-        <button class="pb c" data-key="t" disabled>Thumbs<span class="k">T</span></button>
-        <button class="pb m" data-key="l" disabled>Look<span class="k">L</span></button>
-        <button class="pb g" data-key="z" disabled>Zombie<span class="k">Z</span></button>
-        <button class="pb v" data-key="f" disabled>Photo<span class="k">F</span></button>
+    <div class="padtop">
+      <p class="padhint" id="padhint"><span class="dot"></span> Press a button and watch the robot.</p>
+      <div class="legend">
+        <span class="lg" aria-label="Arrow keys walk">
+          <span class="kcross"><kbd class="kcap">&uarr;</kbd><kbd class="kcap">&larr;</kbd><kbd class="kcap">&darr;</kbd><kbd class="kcap">&rarr;</kbd></span><i>Walk</i>
+        </span>
+        <span class="lg" aria-label="Space jumps"><kbd class="kcap kspace">Space</kbd><i>Jump</i></span>
+        <button class="mute" id="mute" type="button" aria-pressed="false" title="Turn the sound off">
+          <svg class="on" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.6 5.6a3.4 3.4 0 0 1 0 4.8"/><path d="M12.4 3.8a6 6 0 0 1 0 8.4"/></svg>
+          <svg class="off" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z"/><path d="M10.5 6l3.5 4M14 6l-3.5 4"/></svg>
+          <i>Sound on</i>
+        </button>
       </div>
-      <div class="keys" aria-label="Keyboard controls">
-        <div>
-          <div class="kcross"><kbd class="kcap">&uarr;</kbd><kbd class="kcap">&larr;</kbd><kbd class="kcap">&darr;</kbd><kbd class="kcap">&rarr;</kbd></div>
-          <div class="klab">Walk</div>
-        </div>
-        <div>
-          <kbd class="kcap kspace">Space</kbd>
-          <div class="klab">Jump</div>
-        </div>
-      </div>
-      </div>
+    </div>
+    <div class="padrow">
+      <button class="pb c" data-key="1" disabled>Samba<span class="k">1</span></button>
+      <button class="pb m" data-key="2" disabled>Hip Hop<span class="k">2</span></button>
+      <button class="pb g" data-key="c" disabled>Cheer<span class="k">C</span></button>
+      <button class="pb v" data-key="h" disabled>Wave<span class="k">H</span></button>
+      <button class="pb c" data-key="t" disabled>Thumbs<span class="k">T</span></button>
+      <button class="pb m" data-key="l" disabled>Look<span class="k">L</span></button>
+      <button class="pb g" data-key="z" disabled>Zombie<span class="k">Z</span></button>
+      <button class="pb v" data-key="f" disabled>Photo<span class="k">F</span></button>
     </div>
   </div>
 </section>
+</section>
+</div><!-- /herowrap -->
 
 <div class="wrap">
 
@@ -597,6 +613,42 @@ const LOCAL_SCENE = "scene/scene.splinecode";
    buttons press those keys rather than duplicating the actions, so a click and
    a keypress do exactly the same thing. One dispatch on `document` is enough:
    the runtime's listener sits above it and catches the event as it bubbles. */
+/* Sound toggle. The runtime plays through WebAudio, so every context it opens
+   is caught here and suspended or resumed as one. Muted state is a per-viewer
+   convenience kept in localStorage; if storage is unavailable it just starts
+   with sound on. */
+let muted = false;
+try { muted = localStorage.getItem("lt-muted") === "1"; } catch (_) {}
+const audioContexts = [];
+const NativeAC = window.AudioContext || window.webkitAudioContext;
+if (NativeAC) {
+  const nativeResume = NativeAC.prototype.resume;
+  const Patched = function () {
+    const ctx = new NativeAC(...arguments);
+    ctx.resume = function () { return muted ? Promise.resolve() : nativeResume.call(ctx); };
+    audioContexts.push(ctx);
+    if (muted) ctx.suspend();
+    return ctx;
+  };
+  Patched.prototype = NativeAC.prototype;
+  window.AudioContext = Patched;
+  if (window.webkitAudioContext) window.webkitAudioContext = Patched;
+}
+const muteBtn = document.getElementById("mute");
+function applyMute() {
+  muteBtn.setAttribute("aria-pressed", muted ? "true" : "false");
+  muteBtn.title = muted ? "Turn the sound on" : "Turn the sound off";
+  muteBtn.querySelector("i").textContent = muted ? "Sound off" : "Sound on";
+  audioContexts.forEach((ctx) => {
+    if (ctx.state === "closed") return;
+    (muted ? ctx.suspend() : ctx.resume()).catch(() => {});
+  });
+  try { localStorage.setItem("lt-muted", muted ? "1" : "0"); } catch (_) {}
+}
+muteBtn.addEventListener("click", () => { muted = !muted; applyMute(); });
+applyMute();
+window.lastToken = { audioContexts, get muted() { return muted; } };
+
 let splineApp = null;
 const padhint = document.getElementById("padhint");
 const canvas = document.getElementById("scene");
