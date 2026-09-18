@@ -676,3 +676,77 @@ filter leaves the previous selection in place, the following `iterate` quietly
 moved the Claw Machine 6000 units underground instead. `o.name.startsWith('Btn ')`
 works. After any filter-based select, check the change count in the result before
 trusting it.
+
+## Day 9 — Shipping it
+
+The scene is published from Spline's **Viewer** route and loaded in the page with
+`@splinetool/runtime`, not the `<spline-viewer>` element. The runtime hands back
+an application object; the element does not.
+
+### Drive the scene by pressing its keys, not by poking hook objects
+
+The first wiring gave each emote an invisible hook cube in the scene with a
+MouseDown event on it, and the buttons fired those with
+`app.emitEvent("mouseDown", "Do Samba")`. It worked, and it was wrong: the robot
+danced in silence.
+
+The emotes already existed as **KeyDown events on the robot**, and each of those
+carries the whole performance — an Audio action, the announcer line, the clip,
+and the timed return to idle. The hook cubes only ever carried the clip, so
+every one of them was a lossy copy of something already authored.
+
+The fix is to press the key:
+
+    document.dispatchEvent(new KeyboardEvent("keydown", {
+      key: "1", code: "Digit1", keyCode: 49, which: 49,
+      bubbles: true, cancelable: true
+    }));
+
+One dispatch on `document` is enough — the runtime's listener sits above it and
+catches the event as it bubbles. Dispatching the same event on `window`,
+`document` and the canvas fires the action up to three times, which is audible.
+
+Verify audio without being able to hear it, by counting the sources the page
+starts:
+
+    window.__sfx = [];
+    const S = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function () {
+      window.__sfx.push(this.context.state);
+      return S.apply(this, arguments);
+    };
+
+Each button then reports its own delta: Samba +2, Photo +2, Zombie +3, the rest
++1 — exactly matching the Audio actions on each KeyDown event. The first source
+reports `suspended` and the rest `running`, which is the autoplay gate opening on
+the click.
+
+### The runtime fills its canvas, it does not letterbox
+
+Give the stage an aspect narrower than the diorama's own ~7:5 and the neon palms
+are simply cropped off the corners. Full-viewport on a laptop is fine, because
+the viewport is wider than the scene. Below 900px the stage has to keep the
+diorama's shape instead of the viewport's.
+
+Camera for the full-screen stage:
+
+    activateCamera('Iso Camera');
+    lookFrom({ azimuth: 45, elevation: 36, distance: 6000, target: [260, 300, 260] });
+
+Raising the target's Y moves the scene **down** in frame. The conversion is
+worth writing down: one world unit of Y is `cos(elevation) / worldUnitsPerPixel`
+screen pixels, so at this distance about 0.1px. Shifting the diorama down 90px
+took a Y change of 900.
+
+### A section that is also a grid container
+
+`.theater` is a `<section>`, and the stylesheet's `section{padding:clamp(64px,9vw,112px) 0 0}`
+quietly ate 112px **inside** the grid, so `grid-template-rows:1fr auto` never
+filled the viewport and the stage came up short. `padding:0` on the theater.
+
+### Publishing
+
+`gh repo create ampenaranda/last-token --public --source=. --push`, then Pages
+from the root of main with a `.nojekyll` file. Every scene change needs Export →
+Viewer → **Update Viewer** in the desktop app; the page's `SCENE_URL` does not
+change, so nothing has to be redeployed for a scene edit.
